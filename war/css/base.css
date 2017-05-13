@@ -1,0 +1,32 @@
+body
+{
+	font-family: Helvetica, Verdana, Arial, sans-serif;
+	font-size: 11pt;
+	background-color: #faf0ca;
+	margin: 0;
+	padding: 0;
+}
+
+table#logo
+{
+	width: 100%;
+}
+
+#content-wrapper
+{
+	margin-left: 10px;
+	font-size: 9pt;
+}
+
+.strip
+{
+	background-image:url('/images/bg-top.png');
+	background-repeat: repeat-x;
+	width: 100%;
+}
+
+.decorated-link, decorated-link:hover, 
+decorated-link:active, decorated-link:visited
+{
+	color: #8c2425;
+}

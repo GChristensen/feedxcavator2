@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cronentries>
+  <cron>
+    <url>/daily-fetching</url>
+    <description>Fetch heavy feeds</description>
+    <schedule>every day 13:00</schedule>
+    <target>worker</target>
+  </cron>
+  <!--cron>
+    <url>/periodic-fetching</url>
+    <description>Fetch heavy feeds</description>
+    <schedule>every day 02:00</schedule>
+    <target>worker</target>
+  </cron-->
+  <cron>
+    <url>/periodic-fetching</url>
+    <description>Fetch heavy feeds</description>
+    <schedule>every day 14:00</schedule>
+    <target>worker</target>
+  </cron>
+  <!--cron>
+    <url>/x-forums-fetching</url>
+    <description>Fetch heavy feeds</description>
+    <schedule>every day 02:20</schedule>
+    <target>worker</target>
+  </cron-->
+  <cron>
+    <url>/x-forums-fetching</url>
+    <description>Fetch heavy feeds</description>
+    <schedule>every day 14:20</schedule>
+    <target>worker</target>
+  </cron>
+  <cron>
+    <url>/rt-fetching</url>
+    <description>Fetch heavy feeds</description>
+    <schedule>every day 14:30</schedule>
+    <target>worker</target>
+  </cron>
+  <cron>
+    <url>/service-task</url>
+    <description>Service task</description>
+    <schedule>every day 00:00</schedule>
+    <target>worker</target>
+  </cron>
+
+</cronentries>

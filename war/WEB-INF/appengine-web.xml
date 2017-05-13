@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
+
+  <application>myxcavator</application>
+  <version>private</version>
+  <static-files/>
+  <resource-files/>
+
+  <threadsafe>true</threadsafe>
+  <warmup-requests-enabled>false</warmup-requests-enabled>
+  
+  <instance-class>F1</instance-class>
+  <automatic-scaling>
+    <min-idle-instances>1</min-idle-instances>
+    <max-idle-instances>1</max-idle-instances>
+    <min-pending-latency>automatic</min-pending-latency>
+    <max-pending-latency>400ms</max-pending-latency>
+    <max-concurrent-requests>50</max-concurrent-requests>
+  </automatic-scaling>
+
+</appengine-web-app>

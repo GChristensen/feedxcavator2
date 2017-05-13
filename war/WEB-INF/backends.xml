@@ -1,0 +1,9 @@
+<backends>
+ <backend name="worker">
+   <class>B1</class>
+   <max-concurrent-requests>12</max-concurrent-requests>
+   <options>
+     <dynamic>true</dynamic>
+   </options>
+ </backend>
+</backends>

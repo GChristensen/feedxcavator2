@@ -1,0 +1,16 @@
+/.idea
+/.nrepl-port
+/backup.edn
+/reference-custom.clj
+*.bak
+*jar
+/lib
+/classes
+/native
+/.lein-failures
+/checkouts
+/.lein-deps-sum
+*.clj~
+/target
+/war/WEB-INF/appengine-generated
+/war/WEB-INF/lib

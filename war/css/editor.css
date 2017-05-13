@@ -1,0 +1,155 @@
+
+div#form-wrapper
+{
+	margin: 10px;
+	margin-top: 20px;
+}
+
+div#description 
+{
+	padding-left: 12px;
+	width: 860px;
+	text-align: justify;
+}
+
+div#description p 
+{
+	margin-top: 5px;
+	margin-bottom: 10px;
+}
+
+div#description a, div#description a:hover, 
+div#description a:active, div#description a:visited
+{
+	color: #8c2425;
+}
+
+
+div#output, div#loading
+{
+	margin-left: 12px;
+}
+
+div#output
+{
+	display: inline-block;
+	padding-top: 25px;
+	background-image:url('/images/bg-top.png');
+	background-repeat: repeat-x;
+}
+
+div#feed-content
+{
+	width: 860px;
+	overflow: scroll;
+}
+
+form#selectors-form label, form#settings-form label
+{
+	font-size: 10pt;
+}
+
+form#settings-form input[type="text"] 
+{
+	width: 400px;
+}
+
+form#settings-form input[type="checkbox"] 
+{
+	margin-top: 5px;
+}
+
+form#selectors-form textarea, form#settings-form textarea 
+{
+	font-family: Helvetica, Verdana, Arial, sans-serif;
+	font-size: 10pt;
+	width: 400px;
+	height: 50px;
+}
+
+form#selectors-form fieldset, form#settings-form fieldset
+{
+	padding: 8px;
+	display: inline-block;
+	height: 430px;
+}
+
+div#selectors
+{
+	float: left;
+}
+
+div#center-left
+{
+	margin-left: 440px;
+}
+
+div#settings
+{
+	float: left;
+}
+
+div#control-buttons > table
+{
+	width: 100%;
+}
+
+div#service-links
+{
+	margin-left: 440px;
+}
+
+#recaptcha-td
+{
+	padding-top: 20px;
+}
+
+#recaptcha
+{
+	text-align: center;
+}
+
+#confirmation
+{
+	margin-top: 10px;
+	height: 130px;
+}
+
+#button-space
+{
+	height: 85px;
+}
+
+.right
+{
+	float: right;
+}
+
+.clear
+{
+	clear: both;
+}
+
+.mandatory
+{
+	color: red;
+}
+
+.label
+{
+	padding-top: 5px;
+	font-size: 10pt;
+}
+
+.main-buttons
+{
+	padding-top: 10px;
+	font-size: 10pt;
+}
+
+.editor-link, editor-link:hover, 
+editor-link:active, editor-link:visited
+{
+	color: #8c2425;
+}
+
