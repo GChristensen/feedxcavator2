@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<queue-entries>
+    <queue>
+        <name>fetch-queue</name>
+        <rate>1/s</rate>
+        <target>worker</target>
+    </queue>
+</queue-entries>

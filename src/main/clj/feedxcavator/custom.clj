@@ -6,44 +6,56 @@
             [appengine-magic.services.mail :as mail])
   (:use clojure.tools.macro))
 
-(def ^:dynamic *fetcher-paths* (atom []))
+(def ^:dynamic *fetcher-tasks* (atom {}))
+(def ^:dynamic *schedules* (atom []))
+(def ^:dynamic *completed-schedules* (atom []))
 
-(defn deffetcher-helper 
-  ([group-name] (deffetcher-helper group-name nil))
-  ([group-name external-feeds]
-     (let [web-fun (str (name group-name) "-fetching")
-           worker-fun (str "do-" (name group-name) "-fetching")]
-       (swap! *fetcher-paths* conj `(~'GET ~(str "/" web-fun) [] (~(symbol (str "custom/" web-fun)))))
-       (swap! *fetcher-paths* conj `(~'ANY ~(str "/" worker-fun) []  (~(symbol (str "custom/" worker-fun)))))
-       `(do
-          (defn ~(symbol web-fun) []
-            (api/queue-add! ~(str "/" worker-fun) "")
-            (api/page-found "text/plain" "OK"))
+(defn $cleanup-tasks []
+  (reset! *fetcher-tasks* {})
+  (reset! *schedules* []))
 
-          (defn ~(symbol worker-fun) []
-            (let [feeds# (filter #(some (fn [s#] (>= (.indexOf (:feed-title %) s#) 0)) 
-                                       ~(if external-feeds
-                                          `#{~external-feeds}
-                                          `(deref (resolve '~(symbol (str api/+custom-ns+ "/*"
-                                                                          (name group-name) "-feeds*"))))))
-                                (api/get-all-feeds))]
-              (doseq [f# feeds#]
-                (try
-                  (let [feed# (excv/perform-excavation 
-                              (assoc f# :background-fetching true))]
-                    (when feed#
-                      (api/store-rss! (:uuid f#) feed#)))
-                  (catch  Exception e#
-                    (println (.getMessage e#)))))
-              (api/page-found "text/plain" "OK")))))))
+(defn fetch-feeds [feeds]
+  (let [feeds (filter #(some (fn [s#] (>= (.indexOf (:feed-title %) s#) 0)) feeds) (api/get-all-feeds))]
+    (doseq [f feeds]
+      (try
+        (let [result (excv/perform-excavation (assoc f :background-fetching true))]
+          (when result
+            (api/store-rss! (:uuid f) result)))
+        (catch Exception e
+          (println (.getMessage e)))))
+    (api/page-found "text/plain" "OK")))
 
-(defmacro deffetcher [& args] (apply deffetcher-helper args))
+(defmacro deftask [task-name [& feeds] ]
+  `(swap! *fetcher-tasks* assoc ~(name task-name)
+                          {
+                           :queue-fn   (fn [] (api/named-queue-add! "fetch-queue" "/task" ~(name task-name)))
+                           :fetcher-fn (fn [] (fetch-feeds #{~@feeds}))
+                           }
+                          ))
 
-(deffetcher periodic)
-(deffetcher external)
-(deffetcher x-forums)
-(deffetcher daily)
-(deffetcher rt "rutracker")
+(defmacro schedule [task hours mins]
+  `(when (not api/*worker-instance*)
+     (swap! *schedules* conj {:task ~(name task) :hours ~hours :mins ~mins})))
+
+(defn in-prev-5min-range [inst t]
+  (and (>= inst (- t 5)) (<= inst t)))
+
+(defn check-tasks-route []
+  (let [date (java.util.Date.)]
+    (doseq [s @*schedules*]
+      (when (and (not (some #(= % s) @*completed-schedules*))
+                 (= (:hours s) (.getHours date))
+                 (in-prev-5min-range (:mins s) (.getMinutes date)))
+        (swap! *completed-schedules* conj s)
+        ((:queue-fn (@*fetcher-tasks* (:task s)))))))
+  (api/page-found "text/plain" "OK"))
+
+(defn custom-task-route [request]
+  (try
+     ((:fetcher-fn (@*fetcher-tasks* (slurp (:body request)))))
+     (catch Exception e
+       (.printStackTrace e)))
+  (api/page-found "text/plain" "OK"))
 
 (defmacro defextractor [fun-name [feed-settings params] & body]
   (let [extractor-fun (gensym)]
@@ -60,7 +72,7 @@
        (defn ~fun-name [~feed-settings ~params]
          (~extractor-fun ~feed-settings ~params)))))
 
-(defmacro defextractor-bg [fun-name [feed-settings params] & body]
+(defmacro defbackground [fun-name [feed-settings params] & body]
   (let [extractor-fun (gensym)]
     `(do
        (defn ~extractor-fun [~feed-settings ~params]
@@ -77,6 +89,7 @@
          (~extractor-fun ~feed-settings ~params)))))
 
 (defn service-task []
+  (reset! *completed-schedules* [])
   (let [now (api/timestamp)
         week-ago (- now 604800)]
     (api/delete-images! week-ago))
@@ -87,9 +100,7 @@
     (api/delete-images! now))
   (api/page-found "text/plain" "OK"))
 
-(def custom-template )
-
-(defn custom-route []
+(defn custom-code-route []
   (if api/+public-deploy+
     (api/page-not-found)
     (api/html-page
@@ -97,13 +108,13 @@
       ;(enlive/transform
        (enlive/html-resource (api/get-resource-as-stream "custom.html"))))));)
 
-(defn retreive-custom-route [request]
+(defn retreive-custom-code-route [request]
   (if api/+public-deploy+
     (api/page-not-found)
     (let [state (slurp (:body request))]
         (api/html-page (api/query-custom-code)))))
 
-(defn save-custom-route [request]
+(defn save-custom-code-route [request]
   (if api/+public-deploy+
     (api/page-not-found)
     (let [code (slurp (:body request))]
@@ -111,6 +122,17 @@
       (binding [*ns* (find-ns 'feedxcavator.custom)]
         (load-string (api/set-custom-ns code)))
       (api/html-page ""))))
+
+(defn run-task-route [task]
+  (try
+    ((:queue-fn (@*fetcher-tasks* task)))
+    (api/page-found "text/plain" (str task " queued"))
+    (catch Exception e
+      (api/page-found "text/plain" "ERROR"))))
+
+(defn external-fetching-route []
+  ((:queue-fn (@*fetcher-tasks* "fetch-external")))
+  (api/page-found "text/plain" "OK"))
 
 (defn store-external-data [feed-id data]
   (if api/+public-deploy+
@@ -129,11 +151,11 @@
 (defn report-external-errors [date]
   (if api/+public-deploy+
     (api/page-not-found)
-    (let [msg (mail/make-message :from "error@myxcavator.appspotmail.com"
-                                 :to "meta.person@gmail.com"
+    (let [settings (api/query-settings)
+          msg (mail/make-message :from (:sender-mail settings)
+                                 :to (:recipient-mail settings)
                                  :subject "RSS Errors"
-                                 :text-body
-                                 (str "Errors in the last log: http://gateway:81/logs/log-" date ".html"))]
+                                 :text-body (format (:report-url settings) date))]
                                  
       (mail/send msg)
       (api/html-page ""))))

@@ -24,8 +24,10 @@
 (def ^:const +public-deploy+
   "Constant to determine is it a public installation on GAE."
   false)
+(def ^:const +worker-url-prefix+ "worker.")
 
 ;; available in the context of request handler calls
+(def ^:dynamic *worker-instance* "Executing in background instance." nil)
 (def ^:dynamic *servlet-context* "A servlet context instance." nil)
 (def ^:dynamic *remote-addr* "Request remote address." nil)
 (def ^:dynamic *app-host* "Application server host name (with protocol scheme)." nil)
@@ -111,7 +113,8 @@
 platform-specific (use feedxcavator.api/+platform+ to detect the current platform).
 Useful to retreive HTTP headers from a platform-specific response in custom excavators."
   [url & params]
-  :gae [ (apply fetch (cons url params)) ])
+  :gae [(let [params (if (some #{:deadline} params) params (concat params [:deadline 60]))]
+          (apply fetch (cons url params))) ])
 
 (defn fix-relative
   "Transforms relative URLs to absolute (may be needed by a feed reader for headline identification purposes)."
@@ -165,6 +168,7 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
 (defsymbolmacro timestamp-fields (^:key id stamp))
 (defsymbolmacro subscription-fields (^:key uuid name topic callback secret timestamp))
 (defsymbolmacro cookie-fields (^:key domain content timestamp))
+(defsymbolmacro settings-fields (^:key id sender-mail recipient-mail))
 
 (case +platform+
   :gae (do 
@@ -178,6 +182,7 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
          (defentity Timestamp timestamp-fields)
          (defentity Subscription subscription-fields)
          (defentity HttpCookie cookie-fields)
+         (defentity Settings settings-fields)
          ))
 
 (defapi cons-feed
@@ -290,7 +295,7 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
   ""
   [url]
   :gae [ (let [history (ds/retrieve AccessHistory url)]
-           (if history history {:entries #{}})) ])
+           (or history {:entries #{}})) ])
 
 (defapi store-history!
   ""
@@ -312,7 +317,7 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
   ""
   [uuid]
   :gae [ (let [history (ds/retrieve FetcherHistory uuid)]
-           (if history history {:entries #{}})) ])
+           (or history {:entries #{}})) ])
 
 (defapi store-fetcher-history!
   ""
@@ -327,7 +332,7 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
 (def ^:const +custom-ns+ "feedxcavator.custom-code")
 
 (defn set-custom-ns [code]
-  (str "(in-ns '" +custom-ns+ ")"  code))
+  (str "(in-ns '" +custom-ns+ ")($cleanup-tasks)"  code))
     
 (defapi query-custom-code
   ""
@@ -387,6 +392,17 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
   [domain]
   :gae [ (ds/delete! (ds/retrieve HttpCookie domain)) ])
 
+(defapi query-settings
+        ""
+        []
+        :gae [ (let [settings (ds/retrieve Settings "global")]
+                 (or settings {})) ])
+
+(defapi store-settings!
+        ""
+        [settings]
+        :gae [ (ds/save! (map->Settings (assoc settings :id "global"))) ])
+
 (defapi backup-database
   ""
   []
@@ -395,6 +411,7 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
           :feeds (map #(into {} %) (ds/query :kind Feed))
           :subscriptions (map #(into {} %) (ds/query :kind Subscription))
           :custom-code (query-custom-code)
+          :settings (query-settings)
           })
          ])
 
@@ -406,7 +423,8 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
             (store-feed! (cons-feed-from-map f)))
           (doseq [s (:subscriptions data)]
             (store-subscription! (:uuid s) (:name s) (:topic s) (:callback s) (:secret s)))
-          (store-custom-code! (:custom-code data)))
+          (store-custom-code! (:custom-code data))
+          (store-settings! (:settings data)))
          ])
 
 (defapi make-enlive-resource
@@ -480,6 +498,11 @@ May return nil in case if this is not possible."
   "Add a task to the queue"
   [url payload]
   :gae [ (queue/add! :url url :payload payload :headers {"Content-Type" "text/plain"}) ])
+
+(defapi named-queue-add!
+  "Add a task to the queue"
+  [queue url payload]
+  :gae [ (queue/add! :url url :payload payload :queue queue :headers {"Content-Type" "text/plain"}) ])
 
 (defn get-app-host []
   (let [env (System/getProperty "com.google.appengine.runtime.environment")]
@@ -591,6 +614,27 @@ May return nil in case if this is not possible."
 
 ;; misk ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defmacro safely-repeat [statement]
+  `(try
+     ~statement
+     (catch Exception e#
+       (try
+         ~statement
+         (catch Exception e2#
+           (println (.getMessage e2#)))))))
+
+(defmacro safely-repeat3 [statement]
+  `(try
+     ~statement
+     (catch Exception e#
+       (try
+         ~statement
+         (catch Exception e2#
+           (try
+             ~statement
+             (catch Exception e3#
+               (println (.getMessage e2#)))))))))
+
 (defapi in-debug-env?
   "Was the application launched in debug environment?"
   []
@@ -628,3 +672,6 @@ May return nil in case if this is not possible."
   "Escape a string for insertion into HTML code."
   [content]
   (str/escape (str content) {\< "&lt;" \> "&gt;" \" "&quot;"}))
+
+(defn untag [s]
+  (str/replace s #"</?[a-z,A-Z]+>" ""))

@@ -50,9 +50,13 @@
  (GET "/delete" [feed] (manager/delete-route feed))
  (GET "/double" [feed] (manager/duplicate-route feed))
  (GET "/manage" [] (manager/manage-route))
- (GET "/custom" [] (custom/custom-route))
- (POST "/retreive-custom" request (custom/retreive-custom-route request))
- (POST "/save-custom" request (custom/save-custom-route request))
+ (GET "/check-tasks" [] (custom/check-tasks-route))
+ (ANY "/task" request (custom/custom-task-route request))
+ (ANY "/run/:id" [id] (custom/run-task-route id))
+ (ANY "/external-fetching" [] (custom/external-fetching-route))
+ (GET "/custom" [] (custom/custom-code-route))
+ (POST "/retreive-custom" request (custom/retreive-custom-code-route request))
+ (POST "/save-custom" request (custom/save-custom-code-route request))
  (POST "/store-external-data" [feed-id data] (custom/store-external-data feed-id data))
  (POST "/store-encoded-external-data" [feed-id data] (custom/store-encoded-external-data feed-id data))
  (GET "/report-external-errors" [date] (custom/report-external-errors date))
@@ -63,33 +67,33 @@
  (GET "/proxify*" [url referer cookie] (api/proxify url referer cookie))
  (GET "/akiba-search" [keywords] ((ns-resolve (symbol api/+custom-ns+) 'akiba-search) keywords))
  (GET "/admin" [] (admin/admin-route))
+ (POST "/admin" request (admin/admin-store-settings-route request))
  (GET "/backup" [] (admin/backup-database))
- (POST "/restore" request
-   (
-   admin/restore-database request
-   ));_ (mp/wrap-multipart-params admin/restore-database))
+ (POST "/restore" request (admin/restore-database request))
  (ANY "*" [] (api/page-not-found)))
 
 (defn context-binder [handler]
   (fn [req]
-    (binding [api/*servlet-context* (:servlet-context req)
-              api/*remote-addr* (:remote-addr req)
-              api/*app-host* (str #_(name (:scheme req)) "https://"
-                                  (let [server-name (:server-name req)]
-                                    (if (.startsWith server-name "worker.")
-                                      (.substring server-name (inc (.indexOf server-name ".")))
-                                      server-name))
-                                  (let [port (:server-port req)]
-                                        (when (and port (not= port 80))
-                                          (str ":" port))))]
-    (when (not @custom-compiled)
-      (try
-        (binding [*ns* (find-ns 'feedxcavator.custom)]
-          (load-string (api/set-custom-ns (api/query-custom-code)))
-          (swap! custom-compiled (fn [a] true)))
-        (catch Exception e (println (.getStackTrace e)))))
-      
-      (handler req))))
+    (let [server-name (:server-name req)
+          worker-inst? (.startsWith server-name api/+worker-url-prefix+)]
+      (binding [api/*servlet-context* (:servlet-context req)
+                api/*remote-addr* (:remote-addr req)
+                api/*worker-instance* worker-inst?
+                api/*app-host* (str "https://"
+                                    (if worker-inst?
+                                        (.substring server-name (inc (.indexOf server-name ".")))
+                                        server-name)
+                                    (let [port (:server-port req)]
+                                      (when (and port (not= port 80))
+                                        (str ":" port))))]
+        (when (not @custom-compiled)
+          (try
+            (binding [*ns* (find-ns (symbol api/+custom-ns+))]
+              (load-string (api/set-custom-ns (api/query-custom-code)))
+              (swap! custom-compiled (fn [a] true)))
+            (catch Exception e (println (.getStackTrace e)))))
+
+        (handler req)))))
 
 (def feedxcavator-app-handler (handler/site
                                 (context-binder feedxcavator-app-routes)

@@ -27,6 +27,13 @@
                 <button type="submit">Load</button>
             </form>
             </p>
+            <form method="POST" action="/admin" enctype="application/x-www-form-urlencoded">
+                <p><b>Error reports</b></p>
+                <p>Sender mail: <input type="text" name="sender-mail" id="sender-mail" size="40"/></p>
+                <p>Recipient mail: <input type="text" name="recipient-mail" id="recipient-mail" size="40"/></p>
+                <p>Report: <input type="text" name="report-url" id="report-url" size="40"/></p>
+                <button type="submit">Save</button>
+            </form>
         </div>
     </body>
 </html>
