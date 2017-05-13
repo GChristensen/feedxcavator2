@@ -12,13 +12,14 @@
             [feedxcavator.hub :as hub]
             [compojure.handler :as handler]
             [appengine-magic.core :as ae]
-            (ring.middleware [multipart-params :as mp]))
+            [ring.middleware.multipart-params.byte-array :as ring-byte-array]
+            )
   (:use compojure.core
         [ring.util.mime-type :only [ext-mime-type]]))
 
 (def custom-compiled (atom false))
 
-(defn deliver-route [feed-id]
+(defn deliver-feed-route [feed-id]
   (let [feed-settings (when feed-id (api/query-feed feed-id))]
     (if feed-settings
       (try
@@ -30,26 +31,22 @@
             (api/internal-server-error))))
       (api/page-not-found))))
 
-(defn deliver-image [id]
+(defn deliver-image-route [id]
   (let [image (api/query-image id)]
     (if image
       (api/page-found (ext-mime-type id) (.getBytes (:data image)))
       (api/page-not-found))))
 
-(defmacro app-routes [& routes]
-  (let [all-routes (concat (deref custom/*fetcher-paths*) routes)]
-    `(defroutes ~'feedxcavator-app-routes ~@all-routes )))
-
-(app-routes                          
+(defroutes feedxcavator-app-routes
  (GET "/" [] (api/redirect-to "/create"))
  (GET "/create" [] (editor/create-feed-route))
  (GET "/edit" [feed] (editor/edit-feed-route feed))
  (POST "/do-test" request (editor/do-test-route request))
  (POST "/do-create" request (editor/do-create-route request))
- (GET "/deliver" [feed] (deliver-route feed))
+ (GET "/deliver" [feed] (deliver-feed-route feed))
  (ANY "/hub" request (hub/post-action request))
  (GET "/publish" [feed] (hub/publish-notify feed))
- (GET "/image" [id] (deliver-image id))
+ (GET "/image" [id] (deliver-image-route id))
  (GET "/delete" [feed] (manager/delete-route feed))
  (GET "/double" [feed] (manager/duplicate-route feed))
  (GET "/manage" [] (manager/manage-route))
@@ -64,12 +61,14 @@
  (ANY "/clear-data" [] (custom/clear-data))
  (GET "/robots.txt" [] (api/text-page "User-agent: *"))
  (GET "/proxify*" [url referer cookie] (api/proxify url referer cookie))
- (GET "/akiba-search" [keywords] ((ns-resolve 'feedxcavator.custom-code 'akiba-search) keywords))
+ (GET "/akiba-search" [keywords] ((ns-resolve (symbol api/+custom-ns+) 'akiba-search) keywords))
  (GET "/admin" [] (admin/admin-route))
  (GET "/backup" [] (admin/backup-database))
- (POST "/restore" [edn] (admin/restore-database edn))
+ (POST "/restore" request
+   (
+   admin/restore-database request
+   ));_ (mp/wrap-multipart-params admin/restore-database))
  (ANY "*" [] (api/page-not-found)))
-
 
 (defn context-binder [handler]
   (fn [req]
@@ -86,13 +85,14 @@
     (when (not @custom-compiled)
       (try
         (binding [*ns* (find-ns 'feedxcavator.custom)]
-          (load-string (api/query-custom-code custom/+current+))
+          (load-string (api/set-custom-ns (api/query-custom-code)))
           (swap! custom-compiled (fn [a] true)))
         (catch Exception e (println (.getStackTrace e)))))
       
       (handler req))))
 
 (def feedxcavator-app-handler (handler/site
-                                (context-binder feedxcavator-app-routes)))
+                                (context-binder feedxcavator-app-routes)
+                                {:multipart {:store (ring-byte-array/byte-array-store)}}))
 
 (ae/def-appengine-app feedxcavator-app #'feedxcavator-app-handler)

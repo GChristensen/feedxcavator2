@@ -6,7 +6,7 @@
                  [org.clojure/tools.macro "0.1.2"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/clojurescript "1.9.521"]
-                 [compojure "1.0.0"]
+                 [compojure "1.6.0"]
                  [enlive "1.1.6"]
                  [clj-time "0.13.0"]
                  [xerces/xercesImpl "2.11.0"]
@@ -16,7 +16,7 @@
   :aot [feedxcavator.app_servlet]
   :javac-options ["-target" "1.6" "-source" "1.6"]
   :source-paths ["src/main/clj"]
-  :java-source-paths ["src/main/java"]  ; Java source is stored separately.
+  :java-source-paths ["src/main/java"] ; Java source is stored separately.
   :test-paths ["test" "src/test/clj"]
   :resource-paths ["src/main/resources"]
   :appengine-app-versions {:myxcavator "private"}

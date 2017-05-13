@@ -8,8 +8,8 @@
       (enlive/at (enlive/html-resource (api/get-resource-as-stream "admin.html"))))))
 
 (defn backup-database []
-  (api/html-page (api/backup-database)))
+  (api/attachment-page "backup.edn" (api/backup-database)))
 
-(defn restore-database [edn]
-  (api/restore-database edn)
+(defn restore-database [request]
+  (api/restore-database (get (:multipart-params request) "edn"))
   (api/redirect-to "/admin"))

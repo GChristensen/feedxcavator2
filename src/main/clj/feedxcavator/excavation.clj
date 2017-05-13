@@ -8,7 +8,6 @@
          clojure.walk))
 
 (def ^:const +xml-header+ "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
-(def ^:const +custom-code-ns+ "feedxcavator.custom-code")
 
 (defmacro remove-when [cond]
   `(fn [node#]
@@ -202,14 +201,10 @@ Custom excavator will be used if specified in the feed settings."
     (if (not (str/blank? custom-excavator))
       (let [custom-params (:custom-params feed-settings)
             custom-params (if (str/blank? custom-params) [] (read-string custom-params))]
-        (require (read-string +custom-code-ns+))
-;        (require (read-string namespace))
+        (require (read-string api/+custom-ns+))
         (if (>= (.indexOf custom-excavator "/") 0)
           (let [callable (resolve (read-string custom-excavator))]
             (callable feed-settings custom-params))
-          (let [callable (resolve (read-string (str +custom-code-ns+ "/" custom-excavator)))]
-            (callable feed-settings custom-params))
-
-          #_(let [cons (last (.getDeclaredConstructors (resolve (read-string custom-excavator))))]
-            (excavate (.newInstance cons (to-array custom-params)) feed-settings))))
+          (let [callable (resolve (read-string (str api/+custom-ns+ "/" custom-excavator)))]
+            (callable feed-settings custom-params))))
       (excavate (DefaultExcavator.) feed-settings))))

@@ -15,12 +15,15 @@
             </tr>
         </table>
         <div id="content-wrapper">
+            <p id="manage-link" class="editor-link"><a class="decorated-link" href="/manage">[Manage Feeds]</a></p>
             <p>
                 <a class="decorated-link" href="/backup">[Backup database]</a>
             </p>
             <p>
+            <form method="POST" action="/restore" enctype="multipart/form-data">
                 Restore database:
-            <form method="POST" action="/restore"><textarea name="edn"/><br/>
+                <input type="file" name="edn"/>
+                <!--textarea name="edn"/><br/-->
                 <button type="submit">Load</button>
             </form>
             </p>

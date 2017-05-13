@@ -6,8 +6,6 @@
             [appengine-magic.services.mail :as mail])
   (:use clojure.tools.macro))
 
-(def ^:const +current+ "current")
-
 (def ^:dynamic *fetcher-paths* (atom []))
 
 (defn deffetcher-helper 
@@ -26,7 +24,7 @@
             (let [feeds# (filter #(some (fn [s#] (>= (.indexOf (:feed-title %) s#) 0)) 
                                        ~(if external-feeds
                                           `#{~external-feeds}
-                                          `(deref (resolve '~(symbol (str excv/+custom-code-ns+ "/*" 
+                                          `(deref (resolve '~(symbol (str api/+custom-ns+ "/*"
                                                                           (name group-name) "-feeds*"))))))
                                 (api/get-all-feeds))]
               (doseq [f# feeds#]
@@ -103,15 +101,15 @@
   (if api/+public-deploy+
     (api/page-not-found)
     (let [state (slurp (:body request))]
-        (api/html-page (api/query-custom-code state)))))
+        (api/html-page (api/query-custom-code)))))
 
 (defn save-custom-route [request]
   (if api/+public-deploy+
     (api/page-not-found)
     (let [code (slurp (:body request))]
-      (api/store-custom-code! +current+ code)
+      (api/store-custom-code! code)
       (binding [*ns* (find-ns 'feedxcavator.custom)]
-        (load-string code))
+        (load-string (api/set-custom-ns code)))
       (api/html-page ""))))
 
 (defn store-external-data [feed-id data]

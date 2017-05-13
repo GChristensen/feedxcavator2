@@ -323,16 +323,21 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
   ""
   []
   :gae [ (ds/delete! (ds/query :kind FetcherHistory)) ])
+
+(def ^:const +custom-ns+ "feedxcavator.custom-code")
+
+(defn set-custom-ns [code]
+  (str "(in-ns '" +custom-ns+ ")"  code))
     
 (defapi query-custom-code
   ""
-  [state]
-  :gae [(.getValue (:code (ds/retrieve CustomCode state)))])
+  []
+  :gae [(.getValue (:code (ds/retrieve CustomCode "current")))])
 
 (defapi store-custom-code!
   ""
-  [state code]
-  :gae [ (ds/save! (CustomCode. state (ds/as-text code))) ])
+  [code]
+  :gae [ (ds/save! (CustomCode. "current" (ds/as-text code))) ])
 
 (defapi query-external-data
   ""
@@ -389,18 +394,7 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
          {
           :feeds (map #(into {} %) (ds/query :kind Feed))
           :subscriptions (map #(into {} %) (ds/query :kind Subscription))
-          :custiom-code (query-custom-code "current")
-          })
-         ])
-
-(defapi backup-database
-  ""
-  []
-  :gae [(pr-str 
-         {
-          :feeds (map #(into {} %) (ds/query :kind Feed))
-          :subscriptions (map #(into {} %) (ds/query :kind Subscription))
-          :custom-code (query-custom-code "current")
+          :custom-code (query-custom-code)
           })
          ])
 
@@ -412,7 +406,7 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
             (store-feed! (cons-feed-from-map f)))
           (doseq [s (:subscriptions data)]
             (store-subscription! (:uuid s) (:name s) (:topic s) (:callback s) (:secret s)))
-          (store-custom-code! "current" (:custom-code data)))
+          (store-custom-code! (:custom-code data)))
          ])
 
 (defapi make-enlive-resource
@@ -546,6 +540,12 @@ May return nil in case if this is not possible."
 (defn page-found [content-type body]
   {:status 200
    :headers {"Content-Type" content-type,
+             "Cache-Control" "no-cache"}
+   :body body})
+
+(defn attachment-page [filename body]
+  {:status 200
+   :headers {"Content-Disposition" (str "attachment; filename=" filename),
              "Cache-Control" "no-cache"}
    :body body})
 
