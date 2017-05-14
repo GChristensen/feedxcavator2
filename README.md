@@ -125,8 +125,7 @@ Extraction DSL example:
                 (parse-page (str (:target-url feed-settings) "/page/2"))))
 
 ;; fetch some threads from a set of forums of the Bulletin Board; the "Custom parameters" field 
-;; shoud contain forum numeric ids (that will be appended to the forum URL) in the form of the 
-;; following text:
+;; shoud contain forum numeric ids in the form of the following text:
 ;; [1 2 3]
 ;; which will be converted to Clojure vector by read-string
 (defbackground bb-extractor [feed-settings params]
