@@ -1,12 +1,14 @@
 # feedxcavator2
 
 This thing is able to convert anything to RSS with an arbitrary level of 
-fine-tuning by using CSS selectors. Because it's designed as a Google App Engine 
-application, and few people have GAE accounts, know how to install GAE applications 
-and willing to analyze web pages manually to craft necessary CSS selectors, 
-probably no one would use it except me, so here is what it looks like:
+fine-tuning by using CSS selectors. It's also possible to program arbitrary
+feed-extraction process in a simple Clojure-based DSL directly in the web ui.
+Because it's designed as a Google App Engine application, it's troublesome to 
+create a GAE account, upload GAE applications and analyze web pages manually to 
+craft necessary CSS selectors, probably no one would use the app except me, 
+so here is what it looks like:
 
-<a href="https://github.com/GChristensen/feedxcavator/wiki/xcavator.png" target="_blank"><img src="https://github.com/GChristensen/feedxcavator/wiki/xcavator_thumb.png" /></a><a href="https://github.com/GChristensen/feedxcavator/wiki/xcavator.png" target="_blank"><img src="https://github.com/GChristensen/feedxcavator/wiki/xcavator_thumb.png" /></a>
+<a href="https://github.com/GChristensen/feedxcavator2/blob/master/img/xcavator.png" target="_blank"><img src="https://github.com/GChristensen/feedxcavator2/blob/master/img/xcavator_thumb.png" /></a><a href="https://github.com/GChristensen/feedxcavator2/blob/master/img/custom.png" target="_blank"><img src="https://github.com/GChristensen/feedxcavator2/blob/master/img/custom_thumb.png" /></a>
 
 ### Supported CSS Subset
 
