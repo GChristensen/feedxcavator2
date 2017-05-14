@@ -139,11 +139,11 @@ May return nil in case if this is not possible."
                                      (java.io.ByteArrayInputStream. (:content response))
                                      charset))))))
 
-(defn make-string-resource
+(defn resp->str
   "Transforms a platform-specific response obtained with fetch-url api
 function to a format which is edible by enlive selection functions.
 May return nil in case if this is not possible."
-  ([response] (make-string-resource response *feed-settings*))
+  ([response] (resp->str response *feed-settings*))
   ([response feed-settings]
     (when (= (:response-code response) 200)
             (let [content-type ((:headers response) "Content-Type")

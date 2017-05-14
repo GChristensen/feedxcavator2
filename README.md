@@ -72,6 +72,7 @@ Extraction DSL example:
 
 ;; define tasks that will fetch all feeds which name (specified in the "Feed title" 
 ;; field at the task settings) contain one of the given strings
+;; extractors of these fields should be defined with `defbackground` macro
 (deftask fetch-daily-feeds ["autofetch"])
 (schedule fetch-daily-feeds 13 00) ; GMT
 (schedule fetch-daily-feeds 18 00)
@@ -91,7 +92,8 @@ Extraction DSL example:
 ;; }
 ;; api/apply-selectors function magically knows how to apply selectors from the feed settings 
 ;; to the page
-;; it's also possible to make enlive selects from the :html field
+;; it's also possible to make enlive selects from the :html field which may be necessary 
+;; for example, when some data should be extracted from `style` html attribute, etc.
 (defn parse-page [url]
   (let [response (api/fetch-url url)
         doc-tree (api/resp->enlive response)]
@@ -107,34 +109,97 @@ Extraction DSL example:
 
 ;; extractors
 
-;; extractor should return a collection of headline maps with the following fields:
+;; `feed-settings` parameter contains data from feed settings, `params` contain value of the
+;; "Custom parameters" field passed through `read-string` function
+;;
+;; an extractor should return a collection of headline maps with the following fields:
 ;; {
 ;;  :title "headline title" 
 ;;  :link "headline url" 
 ;;  :summary "article summary" 
 ;;  :image "image url" 
 ;; }
-;; `feed-settings` parameter contains data from feed settings, `params` contain value of the
-;; "Custom parameters" field passed through `read-string` 
+;; all other fields are ignored 
 (defextractor multipage-extractor [feed-settings params]
-  (apply concat (parse-page (:target-url feed-settings))
+  (apply concat (parse-page (:target-url feed-settings)) ; URL from the "Target URL" field
                 (parse-page (str (:target-url feed-settings) "/page/2"))))
 
+;; fetch some threads from a set of forums of the Bulletin Board; the "Custom parameters" field 
+;; shoud contain forum numeric ids (that will be appended to the forum URL) in the form of the 
+;; following text:
+;; [1 2 3]
+;; which will be converted to Clojure vector by read-string
+(defbackground bb-extractor [feed-settings params]
+  (apply concat
+         (for [forum params]
+           (let [forum-url (str (:target-url feed-settings) forum)
+                 ;; stage 1: extract thread URLs from forum pages (the corresponding selectors 
+                 ;; should be specified in feed settings) and filter out already seen urls
+                 threads (filter-fetcher-history forum-url (parse-page forum-url))                                             
+             (when (not (empty? threads))
+               ;; stage 2: fetch thread pages and extract data from first posts using enlive
+               (for [t threads]
+                 (let [trhead (api/fetch-url (:link t))
+                       thread-tree (when thread (api/resp->enlive thread))]
+                   (assoc t
+                     ;; remove html tags and special character entities
+                     :title (api/untag (api/html-unescape (:title t)))
+                     ;; get content of the src field of the first <img> tag from post text
+                     :image (:src (:attrs (first (select thread-tree [:.post_text :img]))))
+                     ;; get html string representation of the first tag with .post_text class 
+                     :summary (api/render (first (select thread-tree [:.post_text])))))))))))
 
+;; extract data from json api
+;; "Custom parameters" field hould contain owner id in the form of following text:
+;; 123
+;; which will be embedded into api url
+(defbackground json-extractor [feed-settings params]
+    (let [api-token "..."
+          api-version "1"
+          url (str "https://json.api/method/data.get?owner_id=" params "&access_token=" api-token "&v=" api-version)
+          response (api/fetch-url url)
+          content (api/resp->str response)
+          posts (((json/read-str content) "response") "items")
+          headlines (for [p posts]
+                      {
+                       :title (p "title")
+                       :link (p "url")
+                       :summary (p "text")
+                       :image (or ((p "attachments") "photo_640")
+                                  ((p "attachments") "photo_320"))
+                      })]
+      (sort-by :link #(compare %2 %1) headlines)))
+      
+;; transform another rss (just turn titles upper case)
+(defextractor rss-extractor [feed-settings params]
+  (let [response (api/fetch-url (:target-url feed-settings))
+        doc-tree (api/resp->enlive-xml response)]
+    (for [i (select doc-tree [:item])]
+      (let [tag-content #(apply str (:content (first (select i [%]))))]
+         {
+          :title (str/upper-case (tag-content :title))
+          :link (tag-content :link)
+          :summary (tag-content :description)
+         })))))
 
 ```
 
 ### Private Deployment
 
 You may [install](http://code.google.com/appengine/docs/java/gettingstarted/uploading.html) 
-a private [instance](https://github.com/GChristensen/feedxcavator/downloads)
+a private [instance](https://github.com/GChristensen/feedxcavator2/releases)
 of the application on your GAE account, and only the account owner will be able 
 to create or manage feeds (but still will be able to share feed links). The only 
 thing you need to do is to fill in application id in the 'appengine-web.xml' file.
 
+### Working on code
+
+To compile the project you need to install [this](https://github.com/GChristensen/appengine-magic) fork of 
+appengine-magic into your local leiningen repository (yes appengine-magic still works in 2017).
+
 ### License
 
-Copyright (C) 2011 g/christensen (gchristnsn@gmail.com)
+Copyright (C) 2017 g/christensen (gchristnsn@gmail.com)
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
