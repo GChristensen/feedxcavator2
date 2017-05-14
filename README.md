@@ -186,7 +186,7 @@ Extraction DSL example:
 ### Private Deployment
 
 You may [install](http://code.google.com/appengine/docs/java/gettingstarted/uploading.html) 
-a private [instance](https://github.com/GChristensen/feedxcavator2/releases)
+a private [instance](https://www.dropbox.com/s/94916uykweh6hqe/feedxcavator-2.0.0.zip?dl=1)
 of the application on your GAE account, and only the account owner will be able 
 to create or manage feeds (but still will be able to share feed links). The only 
 thing you need to do is to fill in application id in the 'appengine-web.xml' file.
