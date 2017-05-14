@@ -3,7 +3,7 @@
 This thing is able to convert anything to RSS with an arbitrary level of 
 fine-tuning by using CSS selectors. There is a built-in [pubsubhubbub](https://en.wikipedia.org/wiki/PubSubHubbub)
 server, and it's also possible to program an arbitrary
-feed-extraction process in a simple Clojure-based DSL directly through the web ui.
+feed-extraction process in a simple Clojure-based [DSL](https://en.wikipedia.org/wiki/Domain-specific_language) directly through the web ui.
 Because it's designed as a Google App Engine application, it's troublesome to 
 create a GAE accounts, upload GAE applications and analyze web pages manually to 
 craft necessary CSS selectors, probably no one would use the app except me, 
