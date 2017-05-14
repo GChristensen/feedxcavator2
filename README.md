@@ -46,35 +46,82 @@ queries, which should be enough in the majority of cases.
 
 __feedxcavator2__ will use only supplied CSS selectors to extract verbatim data if the 
 "Custom excavator" field is left blank. If not, it assumes that the field contains the name 
-of a custom extractor function (which data processing possibilities are limitless) 
-defined in Clojure programming language at the "Custom extractors" page. In this case field 
-"Custom parameters" may contain string-readable Clojure datum which will be fed to 
-`read-string` function and passed to extractor.
+of a custom extractor function defined in Clojure programming language at the "Custom 
+extractors" page. In this case field "Custom parameters" may contain a string-readable 
+Clojure datum which will be fed to `read-string` function and passed to the extractor.
 
 There are two types of processing functions which are defined by the `defextractor` and
-`defbackground` macros respectively. The first is intended for direct and fast data conversion,
-the later should be specified for heavy feeds fetched in the background. Use `defextractor`
-for the feeds that need to be extracted during the direct feed URL request (processing time of 
-foreground GAE instance requests is limited to one minute), use `defbackground` for feeds that 
-should be fetched in background tasks (executed at GAE backend instances with the time limit 
-of 10 minutes) defined by `deftask` macro. For feeds with background extractors feed link request 
-will return RSS stored earlier by the task (you don't need anyhow bother on this or specify
-this in feed settings, all is resolved by DSL), so it will change only after next task execution. 
+`defbackground` macros. The first is intended for direct and fast data conversion,
+the later should be used for heavy feeds fetched in the background. Functions defined
+with `defextractor` are called during the direct feed URL request (processing time of 
+foreground GAE instance requests is limited to one minute), functions defined with
+`defbackground` are called in background tasks defined by `deftask` macro (the tasks 
+are executed at GAE backend instances with the time limit of 10 minutes). 
+For feeds with `defbackground` extractors feed link request will return RSS stored earlier by 
+the task (you don't need anyhow bother on this or specify this in feed settings, 
+all is resolved by DSL), so RSS will change only after the next task execution. 
 
-Background task will also automatically notify the aggregator through pubsubhubbub protocol 
-if "Realtime" flag in the feed settings is checked, so aggregators get feed data just after 
-extraction.
+Background task will also automatically notify aggregator through pubsubhubbub protocol 
+if "Realtime" flag in the feed settings is checked, so the aggregator can get data of realtime
+feeds just after extraction.
 
 Extraction DSL example:
 
 ```clojure
-;; define tasks that will fetch feeds which name contain one of the specified strings
+;; task setup 
+
+;; define tasks that will fetch all feeds which name (specified in the "Feed title" 
+;; field at the task settings) contain one of the given strings
 (deftask fetch-daily-feeds ["autofetch"])
-(schedule fetch-daily-feeds 13 00)
+(schedule fetch-daily-feeds 13 00) ; GMT
 (schedule fetch-daily-feeds 18 00)
 
-(deftask fetch-periodic-feeds ["tumblr:mass" "goodmorning"])
+(deftask fetch-periodic-feeds ["tumblr:mass" "fb:" "good morning"])
 (schedule fetch-periodic-feeds 13 10)
+
+;; utility functions
+
+;; transform page defined by url to a list of the maps (headlines) with the following fieleds:
+;; {
+;;  :title "headline title" 
+;;  :link "headline url" 
+;;  :summary "article summary" 
+;;  :image "image url" 
+;;  :html <enlive headline html representation>
+;; }
+;; api/apply-selectors function magically knows how to apply selectors from the feed settings 
+;; to the page
+;; it's also possible to make enlive selects from the :html field
+(defn parse-page [url]
+  (let [response (api/fetch-url url)
+        doc-tree (api/resp->enlive response)]
+    (when doc-tree
+      (api/apply-selectors doc-tree))))
+ 
+;; filter out headlines which links are already has been seen by the fetcher 
+(defn filter-fetcher-history [uuid headlines]
+  (let [history (:entries (db/query-fetcher-history uuid))
+        result (filter #(not (history (:link %))) headlines)]
+    (db/store-fetcher-history! uuid (map #(:link %) headlines))
+    result))
+
+;; extractors
+
+;; extractor should return a collection of headline maps with the following fields:
+;; {
+;;  :title "headline title" 
+;;  :link "headline url" 
+;;  :summary "article summary" 
+;;  :image "image url" 
+;; }
+;; `feed-settings` parameter contains data from feed settings, `params` contain value of the
+;; "Custom parameters" field passed through `read-string` 
+(defextractor multipage-extractor [feed-settings params]
+  (apply concat (parse-page (:target-url feed-settings))
+                (parse-page (str (:target-url feed-settings) "/page/2"))))
+
+
+
 ```
 
 ### Private Deployment
