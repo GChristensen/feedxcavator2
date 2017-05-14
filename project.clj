@@ -28,7 +28,8 @@
                         ; The standard ClojureScript compiler options:
                         ; (See the ClojureScript compiler documentation for details.)
                         :compiler     {
-                                       :output-to   "war/js/main.js" ; default: target/cljsbuild-main.js
-                                       :optimizations :whitespace
+                                       :output-to   "war/js/main.js"
+                                       :optimizations :advanced ;:whitespace
                                        :infer-externs true
-                                       :pretty-print  true}}]})
+                                       :pretty-print  false; true
+                                       }}]})

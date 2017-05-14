@@ -10,24 +10,24 @@
            java.util.zip.GZIPInputStream
            java.util.zip.GZIPOutputStream)
   (:require [appengine-magic.core :as ae]
-           [appengine-magic.services.datastore :as ds]
-           [appengine-magic.services.user :as user]
-           [appengine-magic.services.task-queues :as queue]
-           [appengine-magic.services.memcache :as cache]
-           [net.cgrand.enlive-html :as enlive]
-           [clojure.java.io :as io]
-           [clojure.string :as str]
-           [clj-time.core :as tm])
+            [appengine-magic.services.user :as user]
+            [appengine-magic.services.task-queues :as queue]
+            [appengine-magic.services.memcache :as cache]
+            [net.cgrand.enlive-html :as enlive]
+            [clojure.string :as str]
+            [clj-time.core :as tm])
   (:use clojure.tools.macro
+        clojure.walk
         [appengine-magic.services.url-fetch :only [fetch]]))
 
 (def ^:const +public-deploy+
   "Constant to determine is it a public installation on GAE."
   false)
 (def ^:const +worker-url-prefix+ "worker.")
+(def ^:const +custom-ns+ "feedxcavator.custom-code")
 
 ;; available in the context of request handler calls
-(def ^:dynamic *worker-instance* "Executing in background instance." nil)
+(def ^:dynamic *worker-instance* "Executing in a background instance." nil)
 (def ^:dynamic *servlet-context* "A servlet context instance." nil)
 (def ^:dynamic *remote-addr* "Request remote address." nil)
 (def ^:dynamic *app-host* "Application server host name (with protocol scheme)." nil)
@@ -43,8 +43,6 @@
   "The current underlying platform, :gae or :servlet"
   :gae)
 
-(def ^:const +db-record-limit+ 1048576)
-
 ;; recaptcha private key (needed only for public installations)
 (def ^:const +re-private-key+ "")
 
@@ -53,6 +51,8 @@
 (def ^:const +delete-url-base+ "/delete?feed=")
 (def ^:const +duplicate-url-base+ "/double?feed=")
 (def ^:const +manager-url-base+ "/manage")
+
+(def ^:dynamic *feed-settings*)
 
 (defn get-sub-hub-url [] (str *app-host* "/hub"))
 
@@ -67,44 +67,6 @@
 
 (defn get-feed-url [uuid]
   (str *app-host* +feed-url-base+ uuid))
-
-(defn gunzip
-  "Writes the contents of input to output, decompressed.
-  input: something which can be opened by io/input-stream.
-      The bytes supplied by the resulting stream must be gzip compressed.
-  output: something which can be copied to by io/copy."
-  [input output & opts]
-  (with-open [input (-> input io/input-stream GZIPInputStream.)]
-    (apply io/copy input output opts)))
-
-(defn gzip
-  "Writes the contents of input to output, compressed.
-  input: something which can be copied from by io/copy.
-  output: something which can be opend by io/output-stream.
-      The bytes written to the resulting stream will be gzip compressed."
-  [input output & opts]
-  (with-open [output (-> output io/output-stream GZIPOutputStream.)]
-    (apply io/copy input output opts)))
-
-(defn shrink-for-ds [content]
-  (let [content-bytes (.getBytes content "utf-8")
-;;_ (println (str "Content size: " (alength content-bytes)))
-        compress? (>= (alength content-bytes) +db-record-limit+)
-        content (if compress? 
-                  (let [byte-stream (java.io.ByteArrayOutputStream.)]
-                    (gzip content-bytes byte-stream)
-                    (.toByteArray byte-stream))
-                  content)
-        data-fn (if compress? ds/as-blob ds/as-text)]
-    [(data-fn content) compress?]))
-
-(defn unshrink-from-ds [content compressed?]
-  (if compressed?
-    (let [byte-stream (java.io.ByteArrayOutputStream.)]
-      (gunzip (.getBytes content) byte-stream)
-      (String. (.toByteArray byte-stream) "utf-8"))
-    (.getValue content)))
-
 
 ;; url fetching ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -138,343 +100,60 @@ Useful to retreive HTTP headers from a platform-specific response in custom exca
 (defn timestamp []
   (long (/ (System/currentTimeMillis) 1000)))
 
-(defmacro apply-cons [cons fields]
-  (let [computed-fields (mexpand fields)]
-    `(~cons ~@computed-fields)))
-  
-(defmacro defentity [name field-list]
-  `(ds/defentity ~name [~@(mexpand `~field-list)]))
-
-(defsymbolmacro feed-fields (^:key uuid
-                             feed-title
-                             target-url
-                             charset
-                             ^:clj selectors
-                             ^:clj enlive-selectors
-                             remember-recent
-                             recent-article
-                             realtime
-                             custom-excavator
-                             custom-params))
-
-(defsymbolmacro selector-fields (headline title link summary image))
-
-(defsymbolmacro rss-fields (^:key uuid content compressed))
-(defsymbolmacro image-fields (^:key name url timestamp data))
-(defsymbolmacro history-fields (^:key url ^:clj entries))
-(defsymbolmacro fetcher-history-fields (^:key url ^:clj entries compressed))
-(defsymbolmacro custom-code-fields (^:key state code))
-(defsymbolmacro external-data-fields (^:key feed-id data compressed))
-(defsymbolmacro timestamp-fields (^:key id stamp))
-(defsymbolmacro subscription-fields (^:key uuid name topic callback secret timestamp))
-(defsymbolmacro cookie-fields (^:key domain content timestamp))
-(defsymbolmacro settings-fields (^:key id sender-mail recipient-mail))
-
-(case +platform+
-  :gae (do 
-         (defentity Feed feed-fields)
-         (defentity StoredRSS rss-fields)
-         (defentity StoredImage image-fields)
-         (defentity AccessHistory history-fields)
-         (defentity FetcherHistory fetcher-history-fields)
-         (defentity CustomCode custom-code-fields)
-         (defentity ExternalData external-data-fields)
-         (defentity Timestamp timestamp-fields)
-         (defentity Subscription subscription-fields)
-         (defentity HttpCookie cookie-fields)
-         (defentity Settings settings-fields)
-         ))
-
-(defapi cons-feed
-  "Constructs a feed settings entity struct-map."
-  [feed-fields]
-  :gae [ (apply-cons Feed. feed-fields) ])
-
-(defmacro cons-feed-from-map
-  "Constructs a feed settings entity struct-map from a hash-map with the same structure."
-  [feed-settings]
-  (let [gsettings-map (gensym)]
-    `(let [~gsettings-map ~feed-settings]
-       (cons-feed ~@(for [param `~(mexpand feed-fields)]
-                      (list (keyword param) gsettings-map))))))
-
-(defapi query-feed
-  "Reads feed settings from database."
-  [feed-id]
-  :gae [ (ds/retrieve Feed feed-id) ])
-
-(defapi get-all-feeds
-  "Gets settings of all stored feeds."
-  []
-  :gae [ (ds/query :kind Feed) ])
-
-(defapi get-realtime-feeds
-  "Gets settings of all realtime feeds."
-  []
-  :gae [ (ds/query :kind Feed :filter (= :realtime true)) ])
-
-(defapi store-feed!
-  "Stores feed settings in database."
-  [feed-settings]
-  :gae [ (ds/save! feed-settings) ])
-
-(defapi delete-feed!
-  "Deletes the given feed."
-  [feed-id]
-  :gae [ (ds/delete! (ds/retrieve Feed feed-id)) ])
-
-(defapi query-timestamp
-  ""
-  [id]
-  :gae [ (ds/retrieve Timestamp id) ])
-
-(defapi store-timestamp!
-  ""
-  [id timestamp]
-  :gae [ (ds/save! (Timestamp. id timestamp)) ])
-
-(defapi delete-timestamp!
-  ""
-  [id]
-  :gae [ (ds/delete! (ds/retrieve Timestamp id)) ])
-
-(defapi query-stored-rss
-  ""
-  [feed-id]
-  :gae [ 
-        (if feed-id 
-          (let [rss (ds/retrieve StoredRSS feed-id)]
-            (if rss
-              (assoc rss :content (unshrink-from-ds (:content rss) (:compressed rss)))
-              {:content ""}))
-          {:content ""})])
-
-(defapi store-rss!
-  ""
-  [feed-id content]
-  :gae [ (let [feed-settings (query-feed feed-id)
-               feed-url (str *app-host* +feed-url-base+ (:uuid feed-settings))
-               [content compressed?] (shrink-for-ds content)]
-           (ds/save! (StoredRSS. feed-id content compressed?))
-           (when (:realtime feed-settings)
-             (fetch-url (get-sub-hub-url) :method :post :deadline 60
-                        :headers {"Content-Type" "application/x-www-form-urlencoded"}
-                        :payload (.getBytes (str "hub.mode=publish&hub.url="
-                                                 (java.net.URLEncoder/encode feed-url))
-                                            "UTF-8"))))
-           ])
-
-(defapi query-image
-  ""
-  [name]
-  :gae [(ds/retrieve StoredImage name)])
-
-(defapi is-image-there?
-  ""
-  [url]
-  :gae [(let [image (first (ds/query :kind StoredImage :filter (= :url url)))]
-           (when image
-             (:name image)))])
-
-(defapi store-image!
-  ""
-  [name url data]
-  :gae [ (let [image (first (ds/query :kind StoredImage :filter (= :url url)))]
-           (if image
-             (:name image)
-             (do
-               (ds/save! (StoredImage. name url (timestamp) (ds/as-blob data)))
-               name))) ])
-
-(defapi delete-images!
-  ""
-  [before-date]
-  :gae [ (ds/delete! (ds/query :kind StoredImage :filter (< :timestamp before-date))) ])
-
-(defapi query-history
-  ""
-  [url]
-  :gae [ (let [history (ds/retrieve AccessHistory url)]
-           (or history {:entries #{}})) ])
-
-(defapi store-history!
-  ""
-  [url history]
-  :gae [ (ds/save! (AccessHistory. url (set history))) ])
-
-(defapi delete-realtime-feed-history!
-  ""
-  [feed-id]
-  :gae [ (ds/delete! (ds/retrieve AccessHistory feed-id)) ])
-
-(defn filter-history [url headlines]
-  (let [history (:entries (query-history url))
-        result (filter #(not (history (:link %))) headlines)]
-    (store-history! url (map #(:link %) headlines))
-    result))
-
-(defapi query-fetcher-history
-  ""
-  [uuid]
-  :gae [ (let [history (ds/retrieve FetcherHistory uuid)]
-           (or history {:entries #{}})) ])
-
-(defapi store-fetcher-history!
-  ""
-  [uuid history]
-  :gae [ (ds/save! (FetcherHistory. uuid (set history) false)) ])
-
-(defapi delete-fetcher-history!
-  ""
-  []
-  :gae [ (ds/delete! (ds/query :kind FetcherHistory)) ])
-
-(def ^:const +custom-ns+ "feedxcavator.custom-code")
-
-(defn set-custom-ns [code]
-  (str "(in-ns '" +custom-ns+ ")($cleanup-tasks)"  code))
-    
-(defapi query-custom-code
-  ""
-  []
-  :gae [(.getValue (:code (ds/retrieve CustomCode "current")))])
-
-(defapi store-custom-code!
-  ""
-  [code]
-  :gae [ (ds/save! (CustomCode. "current" (ds/as-text code))) ])
-
-(defapi query-external-data
-  ""
-  [feed-id]
-  :gae [
-        (let [data (ds/retrieve ExternalData feed-id)]
-            (if data
-              (unshrink-from-ds (:data data) (:compressed data))))
-              ])
-
-(defapi store-external-data!
-  ""
-  [feed-id data]
-  :gae [ 
-        (let [[content compressed?] (shrink-for-ds data)]
-          (ds/save! (ExternalData. feed-id content compressed?)))
-          ])
-
-(defapi query-subscription
-  ""
-  [uuid]
-  :gae [ (ds/retrieve Subscription uuid) ])
-
-(defapi store-subscription!
-  ""
-  [uuid name topic callback secret]
-  :gae [ (ds/save! (Subscription. uuid name topic callback secret (timestamp))) ])
-
-(defapi delete-subscription!
-  ""
-  [uuid]
-  :gae [ (ds/delete! (ds/retrieve Subscription uuid)) ])
-
-
-(defapi query-cookie
-  ""
-  [domain]
-  :gae [ (ds/retrieve HttpCookie domain) ])
-
-(defapi store-cookie!
-  ""
-  [domain content]
-  :gae [ (ds/save! (HttpCookie. domain content (timestamp))) ])
-
-(defapi delete-cookie!
-  ""
-  [domain]
-  :gae [ (ds/delete! (ds/retrieve HttpCookie domain)) ])
-
-(defapi query-settings
-        ""
-        []
-        :gae [ (let [settings (ds/retrieve Settings "global")]
-                 (or settings {})) ])
-
-(defapi store-settings!
-        ""
-        [settings]
-        :gae [ (ds/save! (map->Settings (assoc settings :id "global"))) ])
-
-(defapi backup-database
-  ""
-  []
-  :gae [(pr-str 
-         {
-          :feeds (map #(into {} %) (ds/query :kind Feed))
-          :subscriptions (map #(into {} %) (ds/query :kind Subscription))
-          :custom-code (query-custom-code)
-          :settings (query-settings)
-          })
-         ])
-
-(defapi restore-database
-  ""
-  [edn]
-  :gae [(let [data (read-string edn)]
-          (doseq [f (:feeds data)]
-            (store-feed! (cons-feed-from-map f)))
-          (doseq [s (:subscriptions data)]
-            (store-subscription! (:uuid s) (:name s) (:topic s) (:callback s) (:secret s)))
-          (store-custom-code! (:custom-code data))
-          (store-settings! (:settings data)))
-         ])
-
-(defapi make-enlive-resource
+(defn resp->enlive
   "Transforms a platform-specific response obtained with fetch-url api
 function to a format which is edible by enlive selection functions.
 May return nil in case if this is not possible."
-  [response feed-settings]
-  :gae [(when (= (:response-code response) 200)
-          (let [content-type ((:headers response) "Content-Type")
-                charset (if content-type
-                          (let [charset= (.indexOf content-type "charset=")]
-                            (if (>= charset= 0)
-                              (.substring content-type (+ charset= 8))
-                              (:charset feed-settings)))
-                          (:charset feed-settings))]
-            (enlive/html-resource (java.io.InputStreamReader.
-                                   (java.io.ByteArrayInputStream. (:content response))
-                                   charset))))])
+  ([response] (resp->enlive response *feed-settings*))
+  ([response feed-settings]
+    (when (= (:response-code response) 200)
+            (let [content-type ((:headers response) "Content-Type")
+                  charset (if content-type
+                            (let [charset= (.indexOf content-type "charset=")]
+                              (if (>= charset= 0)
+                                (.substring content-type (+ charset= 8))
+                                (if (string? feed-settings) feed-settings (:charset feed-settings))))
+                            (if (string? feed-settings) feed-settings (:charset feed-settings)))]
+              (enlive/html-resource (java.io.InputStreamReader.
+                                     (java.io.ByteArrayInputStream. (:content response))
+                                     charset))))))
 
-(defapi make-enlive-resource-xml
+(defn str->enlive [s]
+  (enlive/html-resource (java.io.StringReader. s)))
+
+(defn resp->enlive-xml
   "Transforms a platform-specific response obtained with fetch-url api
 function to a format which is edible by enlive selection functions.
 May return nil in case if this is not possible."
-  [response feed-settings]
-  :gae [(when (= (:response-code response) 200)
-          (let [content-type ((:headers response) "Content-Type")
-                charset (if content-type
-                          (let [charset= (.indexOf content-type "charset=")]
-                            (if (>= charset= 0)
-                              (.substring content-type (+ charset= 8))
-                              (:charset feed-settings)))
-                          (:charset feed-settings))]
-            (enlive/xml-resource (java.io.InputStreamReader.
-                                   (java.io.ByteArrayInputStream. (:content response))
-                                   charset))))])
+  ([response] (resp->enlive-xml response *feed-settings*))
+  ([response feed-settings]
+    (when (= (:response-code response) 200)
+            (let [content-type ((:headers response) "Content-Type")
+                  charset (if content-type
+                            (let [charset= (.indexOf content-type "charset=")]
+                              (if (>= charset= 0)
+                                (.substring content-type (+ charset= 8))
+                                (if (string? feed-settings) feed-settings (:charset feed-settings))))
+                            (if (string? feed-settings) feed-settings (:charset feed-settings)))]
+              (enlive/xml-resource (java.io.InputStreamReader.
+                                     (java.io.ByteArrayInputStream. (:content response))
+                                     charset))))))
 
-(defapi make-string-resource
+(defn make-string-resource
   "Transforms a platform-specific response obtained with fetch-url api
 function to a format which is edible by enlive selection functions.
 May return nil in case if this is not possible."
-  [response feed-settings]
-  :gae [(when (= (:response-code response) 200)
-          (let [content-type ((:headers response) "Content-Type")
-                charset (if content-type
-                          (let [charset= (.indexOf content-type "charset=")]
-                            (if (>= charset= 0)
-                              (.substring content-type (+ charset= 8))
-                              (:charset feed-settings)))
-                          (:charset feed-settings))]
-            (slurp (:content response) :encoding charset)))])
+  ([response] (make-string-resource response *feed-settings*))
+  ([response feed-settings]
+    (when (= (:response-code response) 200)
+            (let [content-type ((:headers response) "Content-Type")
+                  charset (if content-type
+                            (let [charset= (.indexOf content-type "charset=")]
+                              (if (>= charset= 0)
+                                (.substring content-type (+ charset= 8))
+                                (if (string? feed-settings) feed-settings (:charset feed-settings))))
+                            (if (string? feed-settings) feed-settings (:charset feed-settings)))]
+              (slurp (:content response) :encoding charset)))))
 
 (defn url-encode-utf8 [str]
   (URLEncoder/encode str "UTF-8"))
@@ -542,6 +221,12 @@ May return nil in case if this is not possible."
   "Opens resource file as a stream."
   [path]
   :gae [ (ae/open-resource-stream path) ])
+
+(defn compile-custom-code [code]
+  (binding [*ns* (find-ns (symbol +custom-ns+))]
+    (load-string (str ;"(in-ns '" +custom-ns+ ")"
+                       "($cleanup-tasks)"
+                       code))))
 
 ;; ring responses ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -613,6 +298,60 @@ May return nil in case if this is not possible."
                 (:content response))))
 
 ;; misk ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn apply-selectors
+  "Applies CSS selectors from the feed settings to a HTML page content.
+Returns list of hash-maps with extracted headline data (hash map keys correspond to the selector keys)."
+  ([doc-tree]
+   (apply-selectors doc-tree *feed-settings*))
+  ([doc-tree feed-settings]
+   (apply-selectors doc-tree feed-settings :href :src))
+  ([doc-tree feed-settings link-selector image-selector]
+   (let [selectors (:enlive-selectors feed-settings)]
+     (letfn [(instantiate [sel]
+               (postwalk #(if (symbol? %) (ns-resolve 'net.cgrand.enlive-html %) %)
+                         (postwalk #(if (list? %) (if (var? (first %)) (apply (first %) (rest %)) %) %)
+                                   (postwalk #(if (list? %)
+                                                (if (symbol? (first %))
+                                                  (list (ns-resolve 'net.cgrand.enlive-html (first %))
+                                                        (rest %))
+                                                  %)
+                                                %) sel))))
+             (get-selector [key n] ; get selector fom a set numbered n, get the first selector otherwise
+               (let [sel (selectors key)]
+                 (when sel
+                   (let [sel (if (>= (dec (count sel)) n)
+                               (get sel n)
+                               (first sel))]
+                     (instantiate sel)))))]
+       (loop [n 0 selector-set (:headline selectors) headlines (transient [])]
+         (let [headline-sel (instantiate (first selector-set))]
+           (if headline-sel
+             (do
+               (doseq [headline-html (enlive/select doc-tree headline-sel)]
+                 (letfn [(select-element [category] ; select an element from headline html
+                           (first (enlive/select headline-html (get-selector category n))))
+                         (get-content [selection] ; get the selected element content
+                           (apply str (enlive/emit* (:content selection))))
+                         (get-link [category attr] ; extract link from the selected element
+                           (if link-selector
+                             (fix-relative (attr (:attrs (select-element category)))
+                                               feed-settings)
+                             (str/trim (apply str (enlive/emit* (:content (select-element category)))))))]
+                   (let [headline-data {:title (get-content (select-element :title))
+                                        :link (get-link :link link-selector)
+                                        :summary (get-content (select-element :summary))
+                                        :image (get-link :image image-selector)
+                                        :html headline-html}]
+                     (when (some #(and (string? (second %)) (not (str/blank? (second %)))) headline-data)
+                       (conj! headlines headline-data)))))
+               (recur (inc n) (next selector-set) headlines))
+             (let [headlines (persistent! headlines)]
+               ;; because filter-read-articles function may filter out all headlines, metadata is the only
+               ;; way to determine if selectors have selected nothing
+               (if (seq headlines)
+                 (with-meta headlines {:n-articles (count headlines)})
+                 (with-meta [] {:out-of-sync true}))))))))))
 
 (defmacro safely-repeat [statement]
   `(try

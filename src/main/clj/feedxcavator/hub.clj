@@ -1,5 +1,6 @@
 (ns feedxcavator.hub
   (:require [feedxcavator.api :as api]
+            [feedxcavator.db :as db]
             [clojure.string :as str]
             [clj-time.core :as tm]
             [clj-time.format :as fmt])
@@ -10,8 +11,8 @@
     {:status 404}
     (let [topic (params "hub.topic")
           uuid (.substring topic (inc (.lastIndexOf topic "=")))
-          feed-settings (api/query-feed uuid)]
-      (api/store-subscription! uuid (:feed-title feed-settings)
+          feed-settings (db/query-feed uuid)]
+      (db/store-subscription! uuid (:feed-title feed-settings)
                                topic (params "hub.callback") 
                                (params "hub.secret"))
       (api/fetch-url (str (params "hub.callback") 
@@ -26,7 +27,7 @@
 (defn unsubscribe [params]
   (let [topic (params "hub.topic")
         uuid (.substring topic (inc (.lastIndexOf topic "=")))]
-    (api/delete-subscription! uuid)
+    (db/delete-subscription! uuid)
     (api/fetch-url (str (params "hub.callback") 
                         (str "&hub.lease_seconds=" (params "hub.lease_seconds"))
                         (str "&hub.topic=" (params "hub.topic"))
@@ -39,8 +40,8 @@
 (defn publish [params]
   (let [topic (params "hub.url")
         uuid (.substring topic (inc (.lastIndexOf topic "=")))]
-    (when-let [subscr (api/query-subscription uuid)]
-      (let [payload (:content (api/query-stored-rss uuid))
+    (when-let [subscr (db/query-subscription uuid)]
+      (let [payload (:content (db/query-stored-rss uuid))
             sig (when (:secret subscr) 
                   (HmacSha1Signature/calculateRFC2104HMAC payload (:secret subscr)))
             headers {"Content-Type" "application/rss+xml; charset=utf-8"

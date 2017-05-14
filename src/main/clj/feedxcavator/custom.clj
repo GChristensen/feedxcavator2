@@ -1,5 +1,6 @@
 (ns feedxcavator.custom
   (:require [feedxcavator.api :as api]
+            [feedxcavator.db :as db]
             [clojure.string :as str]
             [feedxcavator.excavation :as excv]
             [net.cgrand.enlive-html :as enlive]
@@ -15,12 +16,12 @@
   (reset! *schedules* []))
 
 (defn fetch-feeds [feeds]
-  (let [feeds (filter #(some (fn [s#] (>= (.indexOf (:feed-title %) s#) 0)) feeds) (api/get-all-feeds))]
+  (let [feeds (filter #(some (fn [s#] (>= (.indexOf (:feed-title %) s#) 0)) feeds) (db/get-all-feeds))]
     (doseq [f feeds]
       (try
         (let [result (excv/perform-excavation (assoc f :background-fetching true))]
           (when result
-            (api/store-rss! (:uuid f) result)))
+            (db/store-rss! (:uuid f) result)))
         (catch Exception e
           (println (.getMessage e)))))
     (api/page-found "text/plain" "OK")))
@@ -63,10 +64,11 @@
        (defn ~extractor-fun [~feed-settings ~params]
          (println ~(str "executing " (name fun-name)))
 
-         (let [headlines# (do ~@body)]
-           (if (not (empty? headlines#))
-             ["application/rss+xml" (~'make-rss-feed headlines# ~feed-settings)]
-             (throw (Exception. "Nothing extracted")))))
+         (binding [api/*feed-settings* ~feed-settings]
+           (let [headlines# (do ~@body)]
+             (if (not (empty? headlines#))
+               ["application/rss+xml" (~'make-rss-feed headlines# ~feed-settings)]
+               (throw (Exception. "Nothing extracted"))))))
        (defn ~(symbol (str (name fun-name) "-test")) [~feed-settings ~params]
          (~extractor-fun ~feed-settings ~params))
        (defn ~fun-name [~feed-settings ~params]
@@ -79,11 +81,12 @@
          (println ~(str "executing " (name fun-name)))
 
          (if (:background-fetching ~feed-settings)
-           (let [headlines# (do ~@body)]
-             (if (not (empty? headlines#))
-               (~'make-rss-feed headlines# ~feed-settings)
-               (throw (Exception. "Nothing extracted"))))
-           ["application/rss+xml" (:content (api/query-stored-rss (:uuid ~feed-settings)))]))
+           (binding [api/*feed-settings* ~feed-settings]
+             (let [headlines# (do ~@body)]
+               (if (not (empty? headlines#))
+                 (~'make-rss-feed headlines# ~feed-settings)
+                 (throw (Exception. "Nothing extracted")))))
+           ["application/rss+xml" (:content (db/query-stored-rss (:uuid ~feed-settings)))]))
        (defextractor ~fun-name [~feed-settings ~params] ~@body)
        (defn ~fun-name [~feed-settings ~params]
          (~extractor-fun ~feed-settings ~params)))))
@@ -92,12 +95,12 @@
   (reset! *completed-schedules* [])
   (let [now (api/timestamp)
         week-ago (- now 604800)]
-    (api/delete-images! week-ago))
+    (db/delete-images! week-ago))
   (api/page-found "text/plain" "OK"))
 
 (defn clear-data []
   (let [now (api/timestamp)]
-    (api/delete-images! now))
+    (db/delete-images! now))
   (api/page-found "text/plain" "OK"))
 
 (defn custom-code-route []
@@ -112,15 +115,14 @@
   (if api/+public-deploy+
     (api/page-not-found)
     (let [state (slurp (:body request))]
-        (api/html-page (api/query-custom-code)))))
+        (api/html-page (db/query-custom-code)))))
 
 (defn save-custom-code-route [request]
   (if api/+public-deploy+
     (api/page-not-found)
     (let [code (slurp (:body request))]
-      (api/store-custom-code! code)
-      (binding [*ns* (find-ns 'feedxcavator.custom)]
-        (load-string (api/set-custom-ns code)))
+      (db/store-custom-code! code)
+      (api/compile-custom-code code)
       (api/html-page ""))))
 
 (defn run-task-route [task]
@@ -137,21 +139,21 @@
 (defn store-external-data [feed-id data]
   (if api/+public-deploy+
     (api/page-not-found)
-    (when (api/query-feed feed-id)
-      (api/store-external-data! feed-id data)
+    (when (db/query-feed feed-id)
+      (db/store-external-data! feed-id data)
       (api/html-page ""))))
 
 (defn store-encoded-external-data [feed-id data]
   (if api/+public-deploy+
     (api/page-not-found)
-    (when (api/query-feed feed-id)
-      (api/store-external-data! feed-id (api/base64dec-unsafe data))
+    (when (db/query-feed feed-id)
+      (db/store-external-data! feed-id (api/base64dec-unsafe data))
       (api/html-page ""))))
 
 (defn report-external-errors [date]
   (if api/+public-deploy+
     (api/page-not-found)
-    (let [settings (api/query-settings)
+    (let [settings (db/query-settings)
           msg (mail/make-message :from (:sender-mail settings)
                                  :to (:recipient-mail settings)
                                  :subject "RSS Errors"
@@ -161,5 +163,5 @@
       (api/html-page ""))))
 
 (defn clear-realtime-history []
-  (api/delete-fetcher-history!)
+  (db/delete-fetcher-history!)
   (api/html-page ""))

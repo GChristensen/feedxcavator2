@@ -1,5 +1,6 @@
 (ns feedxcavator.manager
   (:require [feedxcavator.api :as api]
+            [feedxcavator.db :as db]
             [clojure.string :as str]
             [net.cgrand.enlive-html :as enlive])
   (:use clojure.tools.macro))
@@ -16,7 +17,7 @@
        [:.feed-entry]
        (enlive/clone-for [feed (sort #(compare (str/lower-case (:feed-title %1))
                                                (str/lower-case (:feed-title %2)))
-                                     (api/get-all-feeds))]
+                                     (db/get-all-feeds))]
                          [:.edit-link]
                          (enlive/set-attr :href (str api/+edit-url-base+ (:uuid feed)))
                          [:.delete-link]
@@ -30,16 +31,16 @@
 (defn delete-route [feed-id]
   (do
     (try
-      (api/delete-feed! feed-id)
+      (db/delete-feed! feed-id)
       (catch Exception e (.getMessage e)))
     (api/redirect-to api/+manager-url-base+)))
 
 (defn duplicate-route [feed-id]
   (do
     (try
-      (let [feed (api/query-feed feed-id)]
-        (api/store-feed! 
-         (api/cons-feed-from-map
+      (let [feed (db/query-feed feed-id)]
+        (db/store-feed!
+         (db/map->Feed
           {:uuid (api/get-uuid)
            :feed-title (str (:feed-title feed) "*")
            :target-url (:target-url feed)
@@ -55,7 +56,7 @@
     (api/redirect-to api/+manager-url-base+)))
 
 (defn subscribe-route [feed-id]
-  (let [feed-settings (when feed-id (api/query-feed feed-id))]
+  (let [feed-settings (when feed-id (db/query-feed feed-id))]
     (if feed-settings
       (api/html-page
        (api/render

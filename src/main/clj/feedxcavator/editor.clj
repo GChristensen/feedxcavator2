@@ -3,6 +3,7 @@
 
 (ns feedxcavator.editor
   (:require [feedxcavator.api :as api]
+            [feedxcavator.db :as db]
             [feedxcavator.excavation :as excv]
             [clojure.string :as str]
             [net.cgrand.enlive-html :as enlive]
@@ -51,23 +52,21 @@
            ~@body))))
                 
 (defn edit-feed-route [feed-id]
-  (let [feed-settings (when feed-id (api/query-feed feed-id))]
+  (let [feed-settings (when feed-id (db/query-feed feed-id))]
     (if feed-settings
-      (api/html-page
-       (api/render
-        (fill-for-edit api/feed-fields feed-settings
-                       (fill-for-edit api/selector-fields (:selectors feed-settings) (editor-template)
-                                      (enlive/transform [:#service-links]
-                                                        (fn [node]
-                                                          (when (not api/+public-deploy+) node)))
-                                      (enlive/transform [:#feed-link]
-                                                        (enlive/do->
-                                                         (enlive/set-attr :title (:feed-title feed-settings))
-                                                         (enlive/set-attr :href (str api/*app-host*
-                                                                                     api/+feed-url-base+
-                                                                                     (:uuid feed-settings)))))
-                                      (enlive/transform [:#save]
-                                                        (enlive/content "Save"))))))
+      (->>
+        (fill-for-edit db/selector-fields (:selectors feed-settings) (editor-template)
+                       (enlive/transform [:#feed-link]
+                                         (enlive/do->
+                                           (enlive/set-attr :title (:feed-title feed-settings))
+                                           (enlive/set-attr :href (str api/*app-host*
+                                                                       api/+feed-url-base+
+                                                                       (:uuid feed-settings)))))
+                       (enlive/transform [:#save]
+                                         (enlive/content "Save")))
+        (fill-for-edit db/feed-fields feed-settings)
+        api/render
+        api/html-page)
       (api/page-not-found))))
   
 (defn css-to-enlive [line]
@@ -188,15 +187,11 @@
 (defn do-create-route [request]
   (let [feed-settings (read-feed-settings request)]
     (api/text-page
-     (with-exception-msg
-       (when (not (api/confirmation-valid? (:response feed-settings) (:challenge feed-settings)))
-         (throw (Exception. "Invalid confirmation.")))
-;;       (perform-test feed-settings)
-       (let [feed-id (:uuid feed-settings)
-             feed-settings (if feed-id
-                             feed-settings
-                             (assoc feed-settings :uuid (api/get-uuid)))
-             the-feed (api/store-feed! (api/cons-feed-from-map feed-settings))]
-         (if feed-id       
-           "Saved."
-           (api/render (create-response the-feed))))))))
+      (let [feed-id (:uuid feed-settings)
+            feed-settings (if feed-id
+                            feed-settings
+                            (assoc feed-settings :uuid (api/get-uuid)))
+            the-feed (db/store-feed! (db/map->Feed feed-settings))]
+        (if feed-id
+          "Saved."
+          (api/render (create-response the-feed)))))))

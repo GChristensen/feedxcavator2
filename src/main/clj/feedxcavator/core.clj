@@ -10,6 +10,7 @@
             [feedxcavator.custom-code :as custom-code]
             [feedxcavator.excavation :as excv]
             [feedxcavator.hub :as hub]
+            [feedxcavator.db :as db]
             [compojure.handler :as handler]
             [appengine-magic.core :as ae]
             [ring.middleware.multipart-params.byte-array :as ring-byte-array]
@@ -17,10 +18,10 @@
   (:use compojure.core
         [ring.util.mime-type :only [ext-mime-type]]))
 
-(def custom-compiled (atom false))
+(def custom-code-compiled (atom false))
 
 (defn deliver-feed-route [feed-id]
-  (let [feed-settings (when feed-id (api/query-feed feed-id))]
+  (let [feed-settings (when feed-id (db/query-feed feed-id))]
     (if feed-settings
       (try
         (let [result (excv/perform-excavation feed-settings)]
@@ -32,7 +33,7 @@
       (api/page-not-found))))
 
 (defn deliver-image-route [id]
-  (let [image (api/query-image id)]
+  (let [image (db/query-image id)]
     (if image
       (api/page-found (ext-mime-type id) (.getBytes (:data image)))
       (api/page-not-found))))
@@ -68,8 +69,8 @@
  (GET "/akiba-search" [keywords] ((ns-resolve (symbol api/+custom-ns+) 'akiba-search) keywords))
  (GET "/admin" [] (admin/admin-route))
  (POST "/admin" request (admin/admin-store-settings-route request))
- (GET "/backup" [] (admin/backup-database))
- (POST "/restore" request (admin/restore-database request))
+ (GET "/backup" [] (admin/backup-database-route))
+ (POST "/restore" request (admin/restore-database-route request))
  (ANY "*" [] (api/page-not-found)))
 
 (defn context-binder [handler]
@@ -86,11 +87,10 @@
                                     (let [port (:server-port req)]
                                       (when (and port (not= port 80))
                                         (str ":" port))))]
-        (when (not @custom-compiled)
+        (when (not @custom-code-compiled)
           (try
-            (binding [*ns* (find-ns (symbol api/+custom-ns+))]
-              (load-string (api/set-custom-ns (api/query-custom-code)))
-              (swap! custom-compiled (fn [a] true)))
+              (api/compile-custom-code (db/query-custom-code))
+              (reset! custom-code-compiled true)
             (catch Exception e (println (.getStackTrace e)))))
 
         (handler req)))))
