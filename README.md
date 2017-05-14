@@ -1,23 +1,22 @@
 # feedxcavator2
 
 This thing is able to convert anything to RSS with an arbitrary level of 
-fine-tuning by using CSS selectors. It's also possible to program an arbitrary
-feed-extraction process in a simple Clojure-based DSL directly in the web ui.
+fine-tuning by using CSS selectors. There is a built-in [pubsubhubbub](https://en.wikipedia.org/wiki/PubSubHubbub)
+server, and it's also possible to program an arbitrary
+feed-extraction process in a simple Clojure-based DSL directly through the web ui.
 Because it's designed as a Google App Engine application, it's troublesome to 
 create a GAE account, upload GAE applications and analyze web pages manually to 
 craft necessary CSS selectors, probably no one would use the app except me, 
 so here is what it looks like:
 
-
 <a href="https://github.com/GChristensen/feedxcavator2/blob/master/img/xcavator.png" target="_blank"><img src="https://github.com/GChristensen/feedxcavator2/blob/master/img/xcavator_thumb.png" /></a>&nbsp;&nbsp;<a href="https://github.com/GChristensen/feedxcavator2/blob/master/img/custom.png" target="_blank"><img src="https://github.com/GChristensen/feedxcavator2/blob/master/img/custom_thumb.png" /></a>
 
-
-tl&dr: this is not an RSS aggregator, but an RSS producer that is able to trasform any site
-to RSS.
+tl&dr: this is an RSS producer that is able to transform any site
+to RSS (IT'S NOT AN RSS AGGREGATOR!).
 
 ### Supported CSS Subset
 
-Only the following CSS capabilities are currently supported by __feedxcavator__:
+Only the following CSS capabilities are currently supported by __feedxcavator2__:
 
 <pre>
 * Elements:                     div
