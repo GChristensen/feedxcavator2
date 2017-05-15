@@ -50,19 +50,19 @@ of a custom extractor function defined in Clojure programming language at the "C
 extractors" page. In this case field "Custom parameters" may contain a string-readable 
 Clojure datum which will be fed to `read-string` function and passed to the extractor.
 
-There are two types of processing functions which are defined by the `defextractor` and
+There are two types of processing functions which could be defined by the `defextractor` and
 `defbackground` macros. The first is intended for direct and fast data conversion,
 the later should be used for heavy feeds fetched in the background. Functions defined
 with `defextractor` are called during the direct feed URL request (processing time of 
 foreground GAE instance requests is limited to one minute), functions defined with
 `defbackground` are called in background tasks defined by `deftask` macro (the tasks 
-are executed at GAE backend instances with the time limit of 10 minutes). 
-For feeds with `defbackground` extractors feed link request will return RSS stored earlier by 
+are executed by GAE backend instances with the time limit of 10 minutes). 
+For the feeds with `defbackground` extractors feed link request will return RSS stored earlier by 
 the task (you don't need anyhow bother on this or specify this in feed settings, 
 all is resolved by DSL), so RSS will change only after the next task execution. 
 
 Background task will also automatically notify aggregator through pubsubhubbub protocol 
-if "Realtime" flag in the feed settings is checked, so the aggregator can get data of realtime
+if the "Realtime" flag is checked in the feed settings, so the aggregator can get data of realtime
 feeds just after extraction.
 
 Extraction DSL example:
@@ -91,8 +91,9 @@ Extraction DSL example:
 ;;  :html <enlive headline html representation>
 ;; }
 ;; api/apply-selectors function magically knows how to apply selectors from the feed settings 
-;; to the page
-;; it's also possible to make enlive selects from the :html field which may be necessary 
+;; to the page and transform the given parsed elinve html representation to the list of headlines 
+;; described above
+;; it's also possible to make enlive selects from the :html field which may be necessary, 
 ;; for example, when some data should be extracted from `style` html attribute, etc.
 (defn parse-page [url]
   (let [response (api/fetch-url url)
@@ -109,7 +110,7 @@ Extraction DSL example:
 
 ;; extractors
 
-;; `feed-settings` parameter contains data from feed settings, `params` contain value of the
+;; `feed-settings` parameter contains data from feed settings, `params` hold the value of the
 ;; "Custom parameters" field passed through `read-string` function
 ;;
 ;; an extractor should return a collection of headline maps with the following fields:
@@ -155,7 +156,8 @@ Extraction DSL example:
 (defbackground json-extractor [feed-settings params]
     (let [api-token "..."
           api-version "1"
-          url (str "https://json.api/method/data.get?owner_id=" params "&access_token=" api-token "&v=" api-version)
+          url (str "https://json.api/method/data.get?owner_id=" params 
+                   "&access_token=" api-token "&v=" api-version)
           response (api/fetch-url url)
           content (api/resp->str response)
           posts (((json/read-str content) "response") "items")
@@ -180,21 +182,20 @@ Extraction DSL example:
           :link (tag-content :link)
           :summary (tag-content :description)
          })))))
-
 ```
 
 ### Private Deployment
 
 You may [install](http://code.google.com/appengine/docs/java/gettingstarted/uploading.html) 
 a private [instance](https://www.dropbox.com/s/94916uykweh6hqe/feedxcavator-2.0.0.zip?dl=1)
-of the application on your GAE account, and only the account owner will be able 
-to create or manage feeds (but still will be able to share feed links). The only 
-thing you need to do is to fill in application id in the 'appengine-web.xml' file.
+of the application on your GAE account. Оnly the account owner will be able 
+to create or manage feeds (but still be able to share feed links). The only 
+thing you need to do is to fill-in application id in the 'appengine-web.xml' file.
 
-### Working on code
+### Working on the code
 
 To compile the project you need to install [this](https://github.com/GChristensen/appengine-magic) fork of 
-appengine-magic into your local leiningen repository (yes appengine-magic still works in 2017).
+appengine-magic into your local leiningen repository (yes, appengine-magic still works in 2017).
 
 ### License
 
