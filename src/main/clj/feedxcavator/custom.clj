@@ -45,7 +45,7 @@
   (let [date (java.util.Date.)]
     (doseq [s @*schedules*]
       (when (and (not (some #(= % s) @*completed-schedules*))
-                 (= (:hours s) (.getHours date))
+                 (== (:hours s) (.getHours date))
                  (in-prev-5min-range (:mins s) (.getMinutes date)))
         (swap! *completed-schedules* conj s)
         ((:queue-fn (@*fetcher-tasks* (:task s)))))))
@@ -91,6 +91,10 @@
        (defn ~fun-name [~feed-settings ~params]
          (~extractor-fun ~feed-settings ~params)))))
 
+(defn service-task-front []
+  (reset! *completed-schedules* [])
+  (api/page-found "text/plain" "OK"))
+
 (defn service-task []
   (reset! *completed-schedules* [])
   (let [now (api/timestamp)
@@ -125,7 +129,7 @@
       (api/compile-custom-code code)
       (api/html-page ""))))
 
-(defn run-task-route [task]
+(defn run-task [task]
   (try
     ((:queue-fn (@*fetcher-tasks* task)))
     (api/page-found "text/plain" (str task " queued"))
@@ -157,7 +161,7 @@
           msg (mail/make-message :from (:sender-mail settings)
                                  :to (:recipient-mail settings)
                                  :subject "RSS Errors"
-                                 :text-body (format (:report-url settings) date))]
+                                 :text-body (format (:report settings) date))]
                                  
       (mail/send msg)
       (api/html-page ""))))

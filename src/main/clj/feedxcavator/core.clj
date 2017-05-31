@@ -13,8 +13,7 @@
             [feedxcavator.db :as db]
             [compojure.handler :as handler]
             [appengine-magic.core :as ae]
-            [ring.middleware.multipart-params.byte-array :as ring-byte-array]
-            )
+            [ring.middleware.multipart-params.byte-array :as ring-byte-array])
   (:use compojure.core
         [ring.util.mime-type :only [ext-mime-type]]))
 
@@ -53,7 +52,7 @@
  (GET "/manage" [] (manager/manage-route))
  (GET "/check-tasks" [] (custom/check-tasks-route))
  (ANY "/task" request (custom/custom-task-route request))
- (ANY "/run/:id" [id] (custom/run-task-route id))
+ (ANY "/run/:id" [id] (custom/run-task id))
  (ANY "/external-fetching" [] (custom/external-fetching-route))
  (GET "/custom" [] (custom/custom-code-route))
  (POST "/retreive-custom" request (custom/retreive-custom-code-route request))
@@ -62,6 +61,7 @@
  (POST "/store-encoded-external-data" [feed-id data] (custom/store-encoded-external-data feed-id data))
  (GET "/report-external-errors" [date] (custom/report-external-errors date))
  (GET "/clear-realtime-history" [] (custom/clear-realtime-history))
+ (ANY "/service-task-front" [] (custom/service-task-front))
  (ANY "/service-task" [] (custom/service-task))
  (ANY "/clear-data" [] (custom/clear-data))
  (GET "/robots.txt" [] (api/text-page "User-agent: *"))

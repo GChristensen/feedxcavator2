@@ -56,7 +56,7 @@ the later should be used for heavy feeds fetched in the background. Functions de
 with `defextractor` are called during the direct feed URL request (processing time of 
 foreground GAE instance requests is limited to one minute), functions defined with
 `defbackground` are called in background tasks defined by `deftask` macro (the tasks 
-are executed by GAE backend instances with the time limit of 10 minutes). 
+are executed by GAE backend instances with no time limit). 
 For the feeds with `defbackground` extractors feed link request will return RSS stored earlier by 
 the task (you don't need anyhow bother on this or specify this in feed settings, 
 all is resolved by DSL), so RSS will change only after the next task execution. 
