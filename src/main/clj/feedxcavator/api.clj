@@ -359,8 +359,7 @@ Returns list of hash-maps with extracted headline data (hash map keys correspond
      (catch Exception e#
        (try
          ~statement
-         (catch Exception e2#
-           (println (.getMessage e2#)))))))
+         (catch Exception e2#)))))
 
 (defmacro safely-repeat3 [statement]
   `(try
@@ -371,8 +370,7 @@ Returns list of hash-maps with extracted headline data (hash map keys correspond
          (catch Exception e2#
            (try
              ~statement
-             (catch Exception e3#
-               (println (.getMessage e2#)))))))))
+             (catch Exception e3#)))))))
 
 (defapi in-debug-env?
   "Was the application launched in debug environment?"

@@ -9,6 +9,8 @@ create a GAE accounts, upload GAE applications and analyze web pages manually to
 craft necessary CSS selectors, probably no one would use the app except me, 
 so here is what it looks like:
 
+[DOWNLOAD](https://github.com/GChristensen/feedxcavator2/releases/download/2.0.0/feedxcavator-2.0.0.zip) :: [VIDEO MANUAL](https://youtu.be/jHKo4CM-Qfw)
+
 <a href="https://github.com/GChristensen/feedxcavator2/blob/master/img/xcavator.png" target="_blank"><img src="https://github.com/GChristensen/feedxcavator2/blob/master/img/xcavator_thumb.png" /></a>&nbsp;&nbsp;<a href="https://github.com/GChristensen/feedxcavator2/blob/master/img/custom.png" target="_blank"><img src="https://github.com/GChristensen/feedxcavator2/blob/master/img/custom_thumb.png" /></a>
 
 tl&dr: this is an RSS producer that is able to transform any site
