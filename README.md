@@ -129,14 +129,20 @@ Extraction DSL example:
   (apply concat (parse-page (:target-url feed-settings)) ; URL from the "Target URL" field
                 (parse-page (str (:target-url feed-settings) "/page/2"))))
 
-;; extracting data from headline :thml field which contains elive-parsed html tree of a headline
-;; here image link is extracted from the data-lazy-src attribute of an <img class="lazy" data-lazy-src="kitty.jpg"...>
-;; headlines then desc-sorted by the numeric post id at the end of the link: http://kittysite.net/?post=123 since there may
-;; be sticky posts              
+;; extracting data from headline :thml field which contains elive-parsed html tree of a headline;
+;; here image link is extracted from the data-lazy-src attribute of an 
+;; <img class="lazy" data-lazy-src="kitty.jpg"...>
+;; headlines then desc-sorted by the numeric post id at the end of the link: 
+;; http://kittysite.net/?post=123 to purge sticky posts              
 (defextractor kittysite-extractor [feed-settings params]
     (let [headlines (parse-page (:target-url feed-settings))
-          with-images (map #(assoc % :image (:data-lazy-src (:attrs (first (select (:html %) [:img.lazy]))))) headlines)]
-      (sort-by #(Integer/valueOf (.substring (:link %) (inc (.lastIndexOf (:link %) "=")))) #(compare %2 %1) with-images)))
+          with-images (map #(assoc % :image 
+                                     (:data-lazy-src 
+                                      (:attrs (first (select (:html %) [:img.lazy]))))) 
+                           headlines)]
+      (sort-by #(Integer/valueOf (.substring (:link %) (inc (.lastIndexOf (:link %) "=")))) 
+               #(compare %2 %1) 
+               with-images)))
 
 ;; fetch some threads from a set of forums of the Bulletin Board; the "Custom parameters" field 
 ;; shoud contain forum numeric ids in the form of the following text:
