@@ -39,8 +39,7 @@ library for HTML processing and internally converts all CSS selectors into
 The conversion routine is quite straightforward, so it's 
 better to use enlive selectors in complex cases if css selectors do not work. 
 __feedxcavator2__ will assume that elnive selectors are used if the selector 
-string is wrapped in square brackets (e.g. [:div#some-id :> :h1.some-class 
-:> :a] or [root]) and will not try to convert them.
+string is wrapped in square brackets (e.g. [[:tr (attr= :colspan "2")] :a] or [root]) and will not try to convert them.
 Although, regular CSS selectors should successfully deal with relatively simple hierarchical 
 queries, which should be enough in the majority of cases.
 
@@ -49,19 +48,31 @@ queries, which should be enough in the majority of cases.
 __feedxcavator2__ will use only supplied CSS selectors to extract verbatim data if the 
 "Custom excavator" field is left blank. If not, it assumes that the field contains the name 
 of a custom extractor function defined in Clojure programming language at the "Custom 
-extractors" page. In this case field "Custom parameters" may contain a string-readable 
+extractors" page. It allows to transform the extracted data in every possible way.
+In this case field "Custom parameters" may contain a string-readable 
 Clojure datum which will be fed to `read-string` function and passed to the extractor.
 
 There are two types of processing functions which could be defined by the `defextractor` and
 `defbackground` macros. The first is intended for direct and fast data conversion,
 the later should be used for heavy feeds fetched in the background. Functions defined
-with `defextractor` are called during the direct feed URL request (processing time of 
+with `defextractor` are called during the direct feed URL request by an aggregator (processing time of 
 foreground GAE instance requests is limited to one minute), functions defined with
 `defbackground` are called in background tasks defined by `deftask` macro (the tasks 
 are executed by GAE backend instances with no time limit). 
 For the feeds with `defbackground` extractors feed link request will return RSS stored earlier by 
 the task (you don't need anyhow bother on this or specify this in feed settings, 
 all is resolved by DSL), so RSS will change only after the next task execution. 
+
+An extractor should return a collection of headline maps with the following fields:
+```clojure
+{
+  :title "headline title" 
+  :link "headline url" 
+  :summary "article summary" 
+  :image "image url" 
+}
+```
+all other fields are ignored.
 
 Background task will also automatically notify aggregator through pubsubhubbub protocol 
 if the "Realtime" flag is checked in the feed settings, so the aggregator can get data of realtime
@@ -72,9 +83,9 @@ Extraction DSL example:
 ```clojure
 ;; task setup 
 
-;; define tasks that will fetch all feeds which name (specified in the "Feed title" 
-;; field at the task settings) contain one of the given strings
-;; extractors of these fields should be defined with `defbackground` macro
+;; define tasks that will fetch all feeds which name (specified by the "Feed title" 
+;; field at the feed settings) contain one of the strings given in the parameter vector;
+;; extractors of these feeds should be defined with `defbackground` macro
 (deftask fetch-daily-feeds ["autofetch"])
 (schedule fetch-daily-feeds 13 00) ; GMT
 (schedule fetch-daily-feeds 18 00)
@@ -84,7 +95,8 @@ Extraction DSL example:
 
 ;; utility functions
 
-;; transform page defined by url to a list of the maps (headlines) with the following fieleds:
+;; parse-page function transforms the page defined by the url to a list of maps (headlines) 
+;; with the following fields:
 ;; {
 ;;  :title "headline title" 
 ;;  :link "headline url" 
@@ -93,10 +105,8 @@ Extraction DSL example:
 ;;  :html <enlive headline html representation>
 ;; }
 ;; api/apply-selectors function magically knows how to apply selectors from the feed settings 
-;; to the page and transform the given parsed elinve html representation to the list of headlines 
+;; to the page and transform the given elinve page data representation to the list of headlines 
 ;; described above
-;; it's also possible to make enlive selects from the :html field which may be necessary, 
-;; for example, when some data should be extracted from `style` html attribute, etc.
 (defn parse-page [url]
   (let [response (api/fetch-url url)
         doc-tree (api/resp->enlive response)]
@@ -112,17 +122,9 @@ Extraction DSL example:
 
 ;; extractors
 
-;; `feed-settings` parameter contains data from feed settings, `params` hold the value of the
-;; "Custom parameters" field passed through `read-string` function
-;;
-;; an extractor should return a collection of headline maps with the following fields:
-;; {
-;;  :title "headline title" 
-;;  :link "headline url" 
-;;  :summary "article summary" 
-;;  :image "image url" 
-;; }
-;; all other fields are ignored 
+;; multipage-extractor can extract headlines from several pages
+;; `feed-settings` parameter contains data from the feed settings, `params` hold the string-read
+;; value of the "Custom parameters" field from the feed settings 
 (defextractor multipage-extractor [feed-settings params]
   (apply concat (parse-page (:target-url feed-settings)) ; URL from the "Target URL" field
                 (parse-page (str (:target-url feed-settings) "/page/2"))))
@@ -152,9 +154,9 @@ Extraction DSL example:
                      :summary (api/render (first (select thread-tree [:.post_text])))))))))))
 
 ;; extract data from json api
-;; "Custom parameters" field hould contain owner id in the form of following text:
+;; "Custom parameters" field should contain owner id in the form of following text:
 ;; 123
-;; which will be embedded into api url
+;; which will be converted to an int and embedded into api url
 (defbackground json-extractor [feed-settings params]
     (let [api-token "..."
           api-version "1"
@@ -198,6 +200,10 @@ thing you need to do is to fill-in application id in the 'appengine-web.xml' fil
 
 To compile the project you need to install [this](https://github.com/GChristensen/appengine-magic) fork of 
 appengine-magic into your local leiningen repository (yes, appengine-magic still works in 2017).
+
+It may be necessary to comment out :aot section in the leiningen project and clean the project if you want to 
+debug the application in a local REPL. See src/main/clj/repl.clj for the code needed to run local GAE instance
+at localhost:8080. 
 
 ### License
 

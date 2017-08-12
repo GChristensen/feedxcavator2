@@ -71,12 +71,12 @@
 ;; url fetching ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defapi fetch-url
-  "Returns platform-specific response of url-fetching routine, params are also
-platform-specific (use feedxcavator.api/+platform+ to detect the current platform).
-Useful to retreive HTTP headers from a platform-specific response in custom excavators."
-  [url & params]
-  :gae [(let [params (if (some #{:deadline} params) params (concat params [:deadline 60]))]
-          (apply fetch (cons url params))) ])
+        "Returns platform-specific response of url-fetching routine, params are also
+      platform-specific (use feedxcavator.api/+platform+ to detect the current platform).
+      Useful to retreive HTTP headers from a platform-specific response in custom excavators."
+        [url & params]
+        :gae [(let [params (if (some #{:deadline} params) params (concat params [:deadline 60]))]
+                (apply fetch (cons url params)))])
 
 (defn fix-relative
   "Transforms relative URLs to absolute (may be needed by a feed reader for headline identification purposes)."
@@ -106,17 +106,17 @@ function to a format which is edible by enlive selection functions.
 May return nil in case if this is not possible."
   ([response] (resp->enlive response *feed-settings*))
   ([response feed-settings]
-    (when (= (:response-code response) 200)
-            (let [content-type ((:headers response) "Content-Type")
-                  charset (if content-type
-                            (let [charset= (.indexOf content-type "charset=")]
-                              (if (>= charset= 0)
-                                (.substring content-type (+ charset= 8))
-                                (if (string? feed-settings) feed-settings (:charset feed-settings))))
-                            (if (string? feed-settings) feed-settings (:charset feed-settings)))]
-              (enlive/html-resource (java.io.InputStreamReader.
-                                     (java.io.ByteArrayInputStream. (:content response))
-                                     charset))))))
+   (when (= (:response-code response) 200)
+     (let [content-type ((:headers response) "Content-Type")
+           charset (if content-type
+                     (let [charset= (.indexOf content-type "charset=")]
+                       (if (>= charset= 0)
+                         (.substring content-type (+ charset= 8))
+                         (if (string? feed-settings) feed-settings (:charset feed-settings))))
+                     (if (string? feed-settings) feed-settings (:charset feed-settings)))]
+       (enlive/html-resource (java.io.InputStreamReader.
+                               (java.io.ByteArrayInputStream. (:content response))
+                               charset))))))
 
 (defn str->enlive [s]
   (enlive/html-resource (java.io.StringReader. s)))
@@ -127,17 +127,17 @@ function to a format which is edible by enlive selection functions.
 May return nil in case if this is not possible."
   ([response] (resp->enlive-xml response *feed-settings*))
   ([response feed-settings]
-    (when (= (:response-code response) 200)
-            (let [content-type ((:headers response) "Content-Type")
-                  charset (if content-type
-                            (let [charset= (.indexOf content-type "charset=")]
-                              (if (>= charset= 0)
-                                (.substring content-type (+ charset= 8))
-                                (if (string? feed-settings) feed-settings (:charset feed-settings))))
-                            (if (string? feed-settings) feed-settings (:charset feed-settings)))]
-              (enlive/xml-resource (java.io.InputStreamReader.
-                                     (java.io.ByteArrayInputStream. (:content response))
-                                     charset))))))
+   (when (= (:response-code response) 200)
+     (let [content-type ((:headers response) "Content-Type")
+           charset (if content-type
+                     (let [charset= (.indexOf content-type "charset=")]
+                       (if (>= charset= 0)
+                         (.substring content-type (+ charset= 8))
+                         (if (string? feed-settings) feed-settings (:charset feed-settings))))
+                     (if (string? feed-settings) feed-settings (:charset feed-settings)))]
+       (enlive/xml-resource (java.io.InputStreamReader.
+                              (java.io.ByteArrayInputStream. (:content response))
+                              charset))))))
 
 (defn resp->str
   "Transforms a platform-specific response obtained with fetch-url api
@@ -145,133 +145,133 @@ function to a format which is edible by enlive selection functions.
 May return nil in case if this is not possible."
   ([response] (resp->str response *feed-settings*))
   ([response feed-settings]
-    (when (= (:response-code response) 200)
-            (let [content-type ((:headers response) "Content-Type")
-                  charset (if content-type
-                            (let [charset= (.indexOf content-type "charset=")]
-                              (if (>= charset= 0)
-                                (.substring content-type (+ charset= 8))
-                                (if (string? feed-settings) feed-settings (:charset feed-settings))))
-                            (if (string? feed-settings) feed-settings (:charset feed-settings)))]
-              (slurp (:content response) :encoding charset)))))
+   (when (= (:response-code response) 200)
+     (let [content-type ((:headers response) "Content-Type")
+           charset (if content-type
+                     (let [charset= (.indexOf content-type "charset=")]
+                       (if (>= charset= 0)
+                         (.substring content-type (+ charset= 8))
+                         (if (string? feed-settings) feed-settings (:charset feed-settings))))
+                     (if (string? feed-settings) feed-settings (:charset feed-settings)))]
+       (slurp (:content response) :encoding charset)))))
 
 (defn url-encode-utf8 [str]
   (URLEncoder/encode str "UTF-8"))
 
 (defapi confirmation-valid?
-  "Verify captcha."
-  [response challenge]
-  :gae [(or (not +public-deploy+)
-            (let [params (str "response=" (url-encode-utf8 response)
-                              "&challenge=" (url-encode-utf8 challenge)
-                              "&remoteip=" (url-encode-utf8 feedxcavator.api/*remote-addr*)
-                              "&privatekey=" +re-private-key+)
-                  response (-> (fetch "http://www.google.com/recaptcha/api/verify"
-                                      :method :post
-                                      :payload (.getBytes params "UTF-8"))
-                               :content
-                               slurp)]
-              (>= (.indexOf response "true") 0)))])
+        "Verify captcha."
+        [response challenge]
+        :gae [(or (not +public-deploy+)
+                  (let [params (str "response=" (url-encode-utf8 response)
+                                    "&challenge=" (url-encode-utf8 challenge)
+                                    "&remoteip=" (url-encode-utf8 feedxcavator.api/*remote-addr*)
+                                    "&privatekey=" +re-private-key+)
+                        response (-> (fetch "http://www.google.com/recaptcha/api/verify"
+                                            :method :post
+                                            :payload (.getBytes params "UTF-8"))
+                                     :content
+                                     slurp)]
+                    (>= (.indexOf response "true") 0)))])
 
 (defapi queue-add!
-  "Add a task to the queue"
-  [url payload]
-  :gae [ (queue/add! :url url :payload payload :headers {"Content-Type" "text/plain"}) ])
+        "Add a task to the queue"
+        [url payload]
+        :gae [(queue/add! :url url :payload payload :headers {"Content-Type" "text/plain"})])
 
 (defapi named-queue-add!
-  "Add a task to the queue"
-  [queue url payload]
-  :gae [ (queue/add! :url url :payload payload :queue queue :headers {"Content-Type" "text/plain"}) ])
+        "Add a task to the queue"
+        [queue url payload]
+        :gae [(queue/add! :url url :payload payload :queue queue :headers {"Content-Type" "text/plain"})])
 
 (defn get-app-host []
   (let [env (System/getProperty "com.google.appengine.runtime.environment")]
     (if (= env "Production")
       (str "http://" (System/getProperty "com.google.appengine.application.id") ".appspot.com")
       "http://localhost:8080")))
-  
+
 ;; memcache ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; memcache is not used currently
 
 (defapi cache-contains?
-  "Check for value existence in memory cache."
-  [key]
-  :gae [ (cache/contains? key) ])
+        "Check for value existence in memory cache."
+        [key]
+        :gae [(cache/contains? key)])
 
 (defapi cache-get
-  "Get value from memory cache."
-  [key]
-  :gae [ (cache/get key) ])
+        "Get value from memory cache."
+        [key]
+        :gae [(cache/get key)])
 
 (defapi cache-put!
-  "Put value to memory cache. Expires after 10 minutes."
-  [key value]
-  :gae [ (cache/put! key value :expiration (Expiration/byDeltaSeconds 600)) ])
+        "Put value to memory cache. Expires after 10 minutes."
+        [key value]
+        :gae [(cache/put! key value :expiration (Expiration/byDeltaSeconds 600))])
 
 ;; authentication ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defapi user-admin?
-  "Checks if logged in user is admin."
-  [handler]
-  :gae [ (user/user-admin?) ])
+        "Checks if logged in user is admin."
+        [handler]
+        :gae [(user/user-admin?)])
 
 ;; resources ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defapi get-resource-as-stream
-  "Opens resource file as a stream."
-  [path]
-  :gae [ (ae/open-resource-stream path) ])
+        "Opens resource file as a stream."
+        [path]
+        :gae [(ae/open-resource-stream path)])
 
 (defn compile-custom-code [code]
   (binding [*ns* (find-ns (symbol +custom-ns+))]
-    (load-string (str ;"(in-ns '" +custom-ns+ ")"
-                       "($cleanup-tasks)"
-                       code))))
+    (load-string (str                                       ;"(in-ns '" +custom-ns+ ")"
+                   "($cleanup-tasks)"
+                   code))))
 
 ;; ring responses ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn permission-denied []
-  {:status 403
+  {:status  403
    :headers {"Content-Type" "text/html"}
-   :body "<h2>Permission denied</h2>"})
+   :body    "<h2>Permission denied</h2>"})
 
 (defn page-not-found []
-  {:status 404
+  {:status  404
    :headers {"Content-Type" "text/html"}
-   :body "<h2>Page not found</h2>"})
+   :body    "<h2>Page not found</h2>"})
 
 (defn internal-server-error []
-  {:status 505
+  {:status  505
    :headers {"Content-Type" "text/html"}
-   :body "<h2>Internal server error</h2>"})
+   :body    "<h2>Internal server error</h2>"})
 
 (defn page-found [content-type body]
-  {:status 200
-   :headers {"Content-Type" content-type,
+  {:status  200
+   :headers {"Content-Type"  content-type,
              "Cache-Control" "no-cache"}
-   :body body})
+   :body    body})
 
 (defn attachment-page [filename body]
-  {:status 200
+  {:status  200
    :headers {"Content-Disposition" (str "attachment; filename=" filename),
-             "Cache-Control" "no-cache"}
-   :body body})
+             "Cache-Control"       "no-cache"}
+   :body    body})
 
 (defn html-page [body]
-  {:status 200
-   :headers {"Content-Type" "text/html"
+  {:status  200
+   :headers {"Content-Type"  "text/html"
              "Cache-Control" "no-cache"}
-   :body body})
+   :body    body})
 
 (defn text-page [body]
-  {:status 200
-   :headers {"Content-Type" "text/plain",
+  {:status  200
+   :headers {"Content-Type"  "text/plain",
              "Cache-Control" "no-cache"}
-   :body body})
+   :body    body})
 
 (defn redirect-to
   [location]
-  {:status 302
+  {:status  302
    :headers {"Location" location}})
 
 (defn base64enc [str]
@@ -290,9 +290,9 @@ May return nil in case if this is not possible."
     (.decode dec str)))
 
 (defn proxify [url referer cookie]
-  (let [response (fetch-url (base64dec url) :deadline 60 
+  (let [response (fetch-url (base64dec url) :deadline 60
                             :headers {"Referer" (base64dec referer)
-                                      "Cookie" (base64dec cookie)})]
+                                      "Cookie"  (base64dec cookie)})]
     (page-found (or ((:headers response) "Content-Type")
                     ((:headers response) "content-type"))
                 (:content response))))
@@ -308,41 +308,33 @@ Returns list of hash-maps with extracted headline data (hash map keys correspond
    (apply-selectors doc-tree feed-settings :href :src))
   ([doc-tree feed-settings link-selector image-selector]
    (let [selectors (:enlive-selectors feed-settings)]
-     (letfn [(instantiate [sel]
-               (postwalk #(if (symbol? %) (ns-resolve 'net.cgrand.enlive-html %) %)
-                         (postwalk #(if (list? %) (if (var? (first %)) (apply (first %) (rest %)) %) %)
-                                   (postwalk #(if (list? %)
-                                                (if (symbol? (first %))
-                                                  (list (ns-resolve 'net.cgrand.enlive-html (first %))
-                                                        (rest %))
-                                                  %)
-                                                %) sel))))
-             (get-selector [key n] ; get selector fom a set numbered n, get the first selector otherwise
+     (letfn [(get-selector [key n]                          ; get selector fom a set numbered n, get the first selector otherwise
                (let [sel (selectors key)]
                  (when sel
                    (let [sel (if (>= (dec (count sel)) n)
                                (get sel n)
                                (first sel))]
-                     (instantiate sel)))))]
+                     (eval sel)))))]
        (loop [n 0 selector-set (:headline selectors) headlines (transient [])]
-         (let [headline-sel (instantiate (first selector-set))]
+         (let [headline-sel (eval (first selector-set))]
            (if headline-sel
              (do
                (doseq [headline-html (enlive/select doc-tree headline-sel)]
-                 (letfn [(select-element [category] ; select an element from headline html
+                 (println headline-html)
+                 (letfn [(select-element [category]         ; select an element from headline html
                            (first (enlive/select headline-html (get-selector category n))))
-                         (get-content [selection] ; get the selected element content
+                         (get-content [selection]           ; get the selected element content
                            (apply str (enlive/emit* (:content selection))))
-                         (get-link [category attr] ; extract link from the selected element
+                         (get-link [category attr]          ; extract link from the selected element
                            (if link-selector
                              (fix-relative (attr (:attrs (select-element category)))
-                                               feed-settings)
+                                           feed-settings)
                              (str/trim (apply str (enlive/emit* (:content (select-element category)))))))]
-                   (let [headline-data {:title (get-content (select-element :title))
-                                        :link (get-link :link link-selector)
+                   (let [headline-data {:title   (get-content (select-element :title))
+                                        :link    (get-link :link link-selector)
                                         :summary (get-content (select-element :summary))
-                                        :image (get-link :image image-selector)
-                                        :html headline-html}]
+                                        :image   (get-link :image image-selector)
+                                        :html    headline-html}]
                      (when (some #(and (string? (second %)) (not (str/blank? (second %)))) headline-data)
                        (conj! headlines headline-data)))))
                (recur (inc n) (next selector-set) headlines))
@@ -373,9 +365,9 @@ Returns list of hash-maps with extracted headline data (hash map keys correspond
              (catch Exception e3#)))))))
 
 (defapi in-debug-env?
-  "Was the application launched in debug environment?"
-  []
-  :gae [ (not= appengine-magic.core/appengine-environment-type :production) ])
+        "Was the application launched in debug environment?"
+        []
+        :gae [(not= appengine-magic.core/appengine-environment-type :production)])
 
 (defmacro with-meta-from [obj recipient]
   `(with-meta ~recipient (meta ~obj)))
@@ -383,7 +375,7 @@ Returns list of hash-maps with extracted headline data (hash map keys correspond
 (defmacro alter-meta [obj & kv]
   `(let [obj# ~obj]
      (with-meta obj# (apply assoc (cons (meta obj#) ~kv)))))
-                
+
 (defn get-uuid
   "Get globally unique identifier."
   []

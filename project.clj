@@ -13,8 +13,8 @@
                  [appengine-magic "0.5.1-SNAPSHOT"]]
   :plugins [[appengine-magic "0.5.1-SNAPSHOT"]
             [lein-cljsbuild "1.1.6"]]
-  :aot [feedxcavator.app_servlet
-        feedxcavator.app_context]
+  ;:aot [feedxcavator.app_servlet
+  ;      feedxcavator.app_context]
   :javac-options ["-target" "1.6" "-source" "1.6"]
   :source-paths ["src/main/clj"]
   :java-source-paths ["src/main/java"] ; Java source is stored separately.

@@ -80,7 +80,7 @@
                        token (if (re-matches #".*\[.*\].*" token)
                                (str/replace token #"(.*)\[(.*)\](.*)"
                                             (fn [match]
-                                              (str "[" (nth match 1) " (attr"
+                                              (str "[" (nth match 1) " (net.cgrand.enlive-html/attr"
                                                    (str/replace (nth match 2) #"([^=*~|\^$]+)(?:(.?=)(.*))?"
                                                                 (fn [match]
                                                                   (if (str/blank? (get match 2))
@@ -103,11 +103,13 @@
                                             (fn [match]
                                               (if (str/blank? (get match 3))
                                                 (str ":" (get match 1) " :> " (get match 2))
-                                                (str "[:" (get match 1) " (" (get match 2) " " (get match 3)
+                                                (str "[:" (get match 1) " (net.cgrand.enlive-html/" (get match 2) " " (get match 3)
                                                      ")]"))))
                                token)]
-                   token))]
-    (read-string (str "[" (apply str (interpose " " tokens)) "]"))))
+                   token))
+        enlive-selector (str "[" (apply str (interpose " " tokens)) "]")]
+;    (println enlive-selector)
+    (read-string enlive-selector)))
 
 (defn read-selectors [selectors]
   (let [selectors-kv
