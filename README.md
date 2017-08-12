@@ -34,7 +34,7 @@ Only the following CSS capabilities are currently supported by __feedxcavator2__
 </pre>
 
 __feedxcavator2__ uses [enlive](https://github.com/cgrand/enlive#readme)
-library for HTML processing and internally converts all CSS selectors into
+library for HTML pcontainsg and internally converts all CSS selectors into
 [enlive selectors](http://enlive.cgrand.net/syntax.html).
 The conversion routine is quite straightforward, so it's 
 better to use enlive selectors in complex cases if css selectors do not work. 
@@ -129,6 +129,15 @@ Extraction DSL example:
   (apply concat (parse-page (:target-url feed-settings)) ; URL from the "Target URL" field
                 (parse-page (str (:target-url feed-settings) "/page/2"))))
 
+;; extracting data from headline :thml field which contains elive-parsed html tree of a headline
+;; here image link is extracted from the data-lazy-src attribute of an <img class="lazy" data-lazy-src="kitty.jpg"...>
+;; headlines then desc-sorted by the numeric post id at the end of the link: http://kittysite.net/?post=123 since there may
+;; be sticky posts              
+(defextractor kittysite-extractor [feed-settings params]
+    (let [headlines (parse-page (:target-url feed-settings))
+          with-images (map #(assoc % :image (:data-lazy-src (:attrs (first (select (:html %) [:img.lazy]))))) headlines)]
+      (sort-by #(Integer/valueOf (.substring (:link %) (inc (.lastIndexOf (:link %) "=")))) #(compare %2 %1) with-images)))
+
 ;; fetch some threads from a set of forums of the Bulletin Board; the "Custom parameters" field 
 ;; shoud contain forum numeric ids in the form of the following text:
 ;; [1 2 3]
@@ -163,7 +172,7 @@ Extraction DSL example:
           url (str "https://json.api/method/data.get?owner_id=" params 
                    "&access_token=" api-token "&v=" api-version)
           response (api/fetch-url url)
-          content (api/resp->str response)
+          content (api/resp->str response) ; there is also str->enlive
           posts (((json/read-str content) "response") "items")
           headlines (for [p posts]
                       {
@@ -178,7 +187,7 @@ Extraction DSL example:
 ;; transform another rss (just turn titles upper case)
 (defextractor rss-extractor [feed-settings params]
   (let [response (api/fetch-url (:target-url feed-settings))
-        doc-tree (api/resp->enlive-xml response)]
+        doc-tree (api/resp->enlive-xml response)] ; resp->enlive-xml is for xml-input
     (for [i (select doc-tree [:item])]
       (let [tag-content #(apply str (:content (first (select i [%]))))]
          {
