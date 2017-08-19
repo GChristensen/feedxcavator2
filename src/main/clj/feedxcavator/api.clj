@@ -299,6 +299,10 @@ May return nil in case if this is not possible."
 
 ;; misk ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn eval-selectors [sel]
+  (binding [*ns* (find-ns 'net.cgrand.enlive-html)]
+    (eval sel)))
+
 (defn apply-selectors
   "Applies CSS selectors from the feed settings to a HTML page content.
 Returns list of hash-maps with extracted headline data (hash map keys correspond to the selector keys)."
@@ -314,9 +318,9 @@ Returns list of hash-maps with extracted headline data (hash map keys correspond
                    (let [sel (if (>= (dec (count sel)) n)
                                (get sel n)
                                (first sel))]
-                     (eval sel)))))]
+                     (eval-selectors sel)))))]
        (loop [n 0 selector-set (:headline selectors) headlines (transient [])]
-         (let [headline-sel (eval (first selector-set))]
+         (let [headline-sel (eval-selectors (first selector-set))]
            (if headline-sel
              (do
                (doseq [headline-html (enlive/select doc-tree headline-sel)]
