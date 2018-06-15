@@ -68,8 +68,9 @@ An extractor should return a collection of headline maps with the following fiel
 {
   :title "headline title" 
   :link "headline url" 
-  :summary "article summary" 
-  :image "image url" 
+  :author "author name (optional)"
+  :summary "article summary (optional)" 
+  :image "image url (optional)" 
 }
 ```
 all other fields are ignored.
