@@ -75,6 +75,7 @@
                                        [:guid] #(if (:realtime feed-settings)
                                                   ((content (:link headline)) %)
                                                   nil)
+                                       [:author] (content (:author headline))
                                        [:enclosure] (when (:image headline)
                                                       (do->
                                                        (set-attr :url (:image headline))

@@ -324,7 +324,7 @@ Returns list of hash-maps with extracted headline data (hash map keys correspond
            (if headline-sel
              (do
                (doseq [headline-html (enlive/select doc-tree headline-sel)]
-                 (println headline-html)
+                 ;(println headline-html)
                  (letfn [(select-element [category]         ; select an element from headline html
                            (first (enlive/select headline-html (get-selector category n))))
                          (get-content [selection]           ; get the selected element content
