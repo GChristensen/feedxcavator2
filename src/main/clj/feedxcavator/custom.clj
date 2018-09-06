@@ -10,10 +10,12 @@
 (def ^:dynamic *fetcher-tasks* (atom {}))
 (def ^:dynamic *schedules* (atom []))
 (def ^:dynamic *completed-schedules* (atom []))
+(def ^:dynamic *periodic-schedules* (atom []))
 
 (defn $cleanup-tasks []
   (reset! *fetcher-tasks* {})
-  (reset! *schedules* []))
+  (reset! *schedules* [])
+  (reset! *periodic-schedules* []))
 
 (defn fetch-feeds [feeds]
   (let [feeds (filter #(some (fn [s#] (>= (.indexOf (:feed-title %) s#) 0)) feeds) (db/get-all-feeds))]
@@ -38,6 +40,10 @@
   `(when (not api/*worker-instance*)
      (swap! *schedules* conj {:task ~(name task) :hours ~hours :mins ~mins})))
 
+(defmacro schedule-periodically [task hours]
+  `(when (not api/*worker-instance*)
+     (swap! *periodic-schedules* conj {:task ~(name task) :hours ~hours })))
+
 (defn in-prev-5min-range [inst t]
   (and (>= inst (- t 5)) (<= inst t)))
 
@@ -48,8 +54,11 @@
                  (== (:hours s) (.getHours date))
                  (in-prev-5min-range (:mins s) (.getMinutes date)))
         (swap! *completed-schedules* conj s)
+        ((:queue-fn (@*fetcher-tasks* (:task s))))))
+    (doseq [s @*periodic-schedules*]
+      (when (and (== (mod (.getHours date) (:hours s)) 0) (== (.getMinutes date) 0))
         ((:queue-fn (@*fetcher-tasks* (:task s)))))))
-  (api/page-found "text/plain" "OK"))
+    (api/page-found "text/plain" "OK"))
 
 (defn custom-task-route [request]
   (try
@@ -169,3 +178,36 @@
 (defn clear-realtime-history []
   (db/delete-fetcher-history!)
   (api/html-page ""))
+
+(defn receive-mail [request]
+  (println (str "processing mail: " request))
+  (let [mail-parsed (mail/parse-message request)
+        from (:from mail-parsed)
+        extractor (if (>= (.indexOf from ">") 0)
+                    (get (re-find #"<([^>]*)>" from) 1)
+                    from)
+        feed (first (filter #(= (:feed-title %) extractor)
+                            (db/get-all-feeds)))]
+    (when feed
+      (try
+        (let [result (excv/perform-excavation
+                      (assoc feed :background-fetching true
+                                  :whole-mail mail-parsed
+                               :mail-body (:html-body mail-parsed)))]
+          (when result
+            (db/store-rss! (:uuid feed) result)))
+        (catch Exception e
+          (println (.getMessage e))))))
+    (api/page-found "text/plain" "OK"))
+
+(defn execute-handler-route [name arg sid]
+  (if (= (:id (db/get-sid)) sid)
+    (api/text-page ((resolve (read-string (str api/+custom-ns+ "/" name))) arg))
+    (api/page-not-found))
+  )
+
+(defn execute-handler-html-route [name arg sid]
+  (if (= (:id (db/get-sid)) sid)
+    (api/html-page ((resolve (read-string (str api/+custom-ns+ "/" name))) arg))
+    (api/page-not-found))
+  )

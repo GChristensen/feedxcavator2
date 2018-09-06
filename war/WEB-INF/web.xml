@@ -43,6 +43,7 @@
       <url-pattern>/custom</url-pattern>
       <url-pattern>/manage</url-pattern>
       <url-pattern>/admin</url-pattern>
+      <url-pattern>/_ah/mail/*</url-pattern>
     </web-resource-collection>
     <auth-constraint>
       <role-name>admin</role-name>

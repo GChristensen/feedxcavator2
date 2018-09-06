@@ -87,12 +87,16 @@ Extraction DSL example:
 ;; define tasks that will fetch all feeds which name (specified by the "Feed title" 
 ;; field at the feed settings) contain one of the strings given in the parameter vector;
 ;; extractors of these feeds should be defined with `defbackground` macro
+(deftask fetch-morning-feeds ["tumblr:mass" "fb:" "good morning"])
+(schedule fetch-morning-feeds 08 10)
+
 (deftask fetch-daily-feeds ["autofetch"])
 (schedule fetch-daily-feeds 13 00) ; GMT
 (schedule fetch-daily-feeds 18 00)
 
-(deftask fetch-periodic-feeds ["tumblr:mass" "fb:" "good morning"])
-(schedule fetch-periodic-feeds 13 10)
+;; fetch every two hours
+(deftask fetch-news-feeds ["live news"])
+(schedule-periodically fetch-news-feeds 2)
 
 ;; utility functions
 

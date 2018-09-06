@@ -17,7 +17,7 @@
             ]
   :aot [feedxcavator.app_servlet
         feedxcavator.app_context]
-  :javac-options ["-target" "1.6" "-source" "1.6"]
+  :javac-options ["-target" "1.8" "-source" "1.8"]
   :source-paths ["src/main/clj"]
   :java-source-paths ["src/main/java"] ; Java source is stored separately.
   :test-paths ["test" "src/test/clj"]

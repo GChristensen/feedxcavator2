@@ -36,6 +36,7 @@
 (defsymbolmacro subscription-fields (^:key uuid name topic callback secret timestamp))
 (defsymbolmacro cookie-fields (^:key domain content timestamp))
 (defsymbolmacro settings-fields (^:key id sender-mail recipient-mail report))
+(defsymbolmacro sid-fields (^:key id))
 
 (case api/+platform+
   :gae (do
@@ -50,6 +51,7 @@
          (defentity Subscription subscription-fields)
          (defentity HttpCookie cookie-fields)
          (defentity Settings settings-fields)
+         (defentity Sid sid-fields)
          ))
 
 (defn gunzip
@@ -287,6 +289,16 @@
         ""
         [settings]
         :gae [ (ds/save! (map->Settings (assoc settings :id "global"))) ])
+
+(defapi get-sid
+        "Gets settings of all stored feeds."
+        []
+        :gae [ (first (ds/query :kind Sid)) ])
+
+(defapi store-sid!
+        ""
+        [id]
+        :gae [ (ds/save! (Sid. id)) ])
 
 (defapi backup-database
         ""

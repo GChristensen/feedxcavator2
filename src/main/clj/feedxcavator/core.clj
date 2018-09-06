@@ -31,11 +31,16 @@
             (api/internal-server-error))))
       (api/page-not-found))))
 
+(def img-sync (atom []))
+
 (defn deliver-image-route [id]
-  (let [image (db/query-image id)]
-    (if image
-      (api/page-found (ext-mime-type id) (.getBytes (:data image)))
-      (api/page-not-found))))
+  (try
+    (let [image (db/query-image id)]
+      (if image
+        (api/page-found (ext-mime-type id) (.getBytes (:data image)))
+        (api/page-not-found)))
+    (catch Exception e (api/page-found))))
+        
 
 (defroutes feedxcavator-app-routes
  (GET "/" [] (api/redirect-to "/create"))
@@ -46,6 +51,7 @@
  (GET "/deliver" [feed] (deliver-feed-route feed))
  (ANY "/hub" request (hub/post-action request))
  (GET "/publish" [feed] (hub/publish-notify feed))
+; (GET "/image" [id] (locking @img-sync (deliver-image-route id)))
  (GET "/image" [id] (deliver-image-route id))
  (GET "/delete" [feed] (manager/delete-route feed))
  (GET "/double" [feed] (manager/duplicate-route feed))
@@ -71,6 +77,9 @@
  (POST "/admin" request (admin/admin-store-settings-route request))
  (GET "/backup" [] (admin/backup-database-route))
  (POST "/restore" request (admin/restore-database-route request))
+ (GET "/handler" [name arg sid] (custom/execute-handler-route name arg sid))
+ (GET "/handler-html" [name arg sid] (custom/execute-handler-html-route name arg sid))
+ (ANY "/_ah/mail/*" request (custom/receive-mail request))
  (ANY "*" [] (api/page-not-found)))
 
 (defn context-binder [handler]

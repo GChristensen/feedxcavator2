@@ -1,7 +1,7 @@
 /.idea
 /.nrepl-port
 /backup.edn
-/reference-custom.clj
+/reference-custom*
 *.bak
 *jar
 /lib
@@ -14,3 +14,4 @@
 /target
 /war/WEB-INF/appengine-generated
 /war/WEB-INF/lib
+pixiv.clj
