@@ -1,6 +1,6 @@
 /.idea
 /.nrepl-port
-/backup.edn
+/backup.edn*
 /reference-custom*
 *.bak
 *jar
