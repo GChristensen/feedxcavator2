@@ -34,7 +34,7 @@ Only the following CSS capabilities are currently supported by __feedxcavator2__
 </pre>
 
 __feedxcavator2__ uses [enlive](https://github.com/cgrand/enlive#readme)
-library for HTML pcontainsg and internally converts all CSS selectors into
+library for HTML processing and internally converts all CSS selectors into
 [enlive selectors](http://enlive.cgrand.net/syntax.html).
 The conversion routine is quite straightforward, so it's 
 better to use enlive selectors in complex cases if css selectors do not work. 
