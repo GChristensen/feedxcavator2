@@ -36,6 +36,12 @@
 (defsymbolmacro subscription-fields (^:key uuid name topic callback secret timestamp))
 (defsymbolmacro cookie-fields (^:key domain content timestamp))
 (defsymbolmacro settings-fields (^:key id sender-mail recipient-mail report))
+(defsymbolmacro user-sample-fields (^:key id headlines date last-fetch-count))
+
+
+
+
+
 (defsymbolmacro sid-fields (^:key id))
 
 (case api/+platform+
@@ -51,6 +57,7 @@
          (defentity Subscription subscription-fields)
          (defentity HttpCookie cookie-fields)
          (defentity Settings settings-fields)
+         (defentity UserSample user-sample-fields)
          (defentity Sid sid-fields)
          ))
 
@@ -289,6 +296,16 @@
         ""
         [settings]
         :gae [ (ds/save! (map->Settings (assoc settings :id "global"))) ])
+
+(defapi query-user-sample
+        ""
+        [id]
+        :gae [ (ds/retrieve UserSample id) ])
+
+(defapi store-user-sample!
+        ""
+        [id headlines date last-fetch-count]
+        :gae [ (ds/save! (UserSample. id headlines date last-fetch-count)) ])
 
 (defapi get-sid
         "Gets settings of all stored feeds."

@@ -25,7 +25,8 @@
           (when result
             (db/store-rss! (:uuid f) result)))
         (catch Exception e
-          (println (.getMessage e)))))
+          (.printStackTrace e)
+          #_(println (.getMessage e)))))
     (api/page-found "text/plain" "OK")))
 
 (defmacro deftask [task-name [& feeds] ]
