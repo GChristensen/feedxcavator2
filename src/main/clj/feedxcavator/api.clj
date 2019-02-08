@@ -155,6 +155,18 @@ May return nil in case if this is not possible."
                      (if (string? feed-settings) feed-settings (:charset feed-settings)))]
        (slurp (:content response) :encoding charset)))))
 
+(defn resp*->str
+  ([response] (resp*->str response *feed-settings*))
+  ([response feed-settings]
+     (let [content-type ((:headers response) "Content-Type")
+           charset (if content-type
+                     (let [charset= (.indexOf content-type "charset=")]
+                       (if (>= charset= 0)
+                         (.substring content-type (+ charset= 8))
+                         (if (string? feed-settings) feed-settings (:charset feed-settings))))
+                     (if (string? feed-settings) feed-settings (:charset feed-settings)))]
+       (slurp (:content response) :encoding charset))))
+
 (defn url-encode-utf8 [str]
   (URLEncoder/encode str "UTF-8"))
 

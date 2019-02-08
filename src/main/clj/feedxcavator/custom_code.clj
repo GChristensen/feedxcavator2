@@ -8,4 +8,5 @@
             [clj-time.format :as fmt])
   (:use [feedxcavator.excavation :only [make-rss-feed]]
         [feedxcavator.custom :only [$cleanup-tasks deftask schedule schedule-periodically defextractor defbackground]]
-        net.cgrand.enlive-html))
+        net.cgrand.enlive-html)
+  (:import [feedxcavator CFSolver]))

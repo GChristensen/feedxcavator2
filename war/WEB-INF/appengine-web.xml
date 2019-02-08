@@ -8,7 +8,14 @@
   <runtime>java8</runtime>
   <threadsafe>true</threadsafe>
   <warmup-requests-enabled>false</warmup-requests-enabled>
-  
+
+
+  <!-- 'default' service definition -->
+
+
+
+  <module>default</module>
+
   <instance-class>F1</instance-class>
   <automatic-scaling>
     <min-idle-instances>1</min-idle-instances>
@@ -18,6 +25,27 @@
     <max-pending-latency>400ms</max-pending-latency>
     <max-concurrent-requests>50</max-concurrent-requests>
   </automatic-scaling>
+
+
+
+  <!-- end of 'default' service definition -->
+
+  
+  <!-- 'worker' service definition -->
+
+  <!--
+
+  <module>worker</module>
+  <instance-class>B1</instance-class>
+  <basic-scaling>
+    <max-instances>1</max-instances>
+    <idle-timeout>1m</idle-timeout>
+  </basic-scaling>
+
+  -->
+
+  <!-- end of 'worker' service definition -->
+
 
   <inbound-services>
     <!-- Used to handle incoming mail. -->
