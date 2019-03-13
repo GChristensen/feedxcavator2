@@ -40,7 +40,7 @@
         (api/page-found (ext-mime-type id) (.getBytes (:data image)))
         (api/page-not-found)))
     (catch Exception e (api/page-found))))
-        
+
 
 (defroutes feedxcavator-app-routes
  (GET "/" [] (api/redirect-to "/create"))
@@ -79,6 +79,7 @@
  (POST "/restore" request (admin/restore-database-route request))
  (GET "/handler" [name arg sid] (custom/execute-handler-route name arg sid))
  (GET "/handler-html" [name arg sid] (custom/execute-handler-html-route name arg sid))
+ (ANY "/redir/*" [url] (api/redirect-to url))
  (ANY "/_ah/mail/*" request (custom/receive-mail request))
  (ANY "*" [] (api/page-not-found)))
 
