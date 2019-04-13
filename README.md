@@ -1,24 +1,25 @@
 # feedxcavator2
 
 This thing is able to convert anything to RSS with an arbitrary level of 
-fine-tuning by using CSS selectors. There is a built-in [pubsubhubbub](https://en.wikipedia.org/wiki/PubSubHubbub)
-server, and it's also possible to program an arbitrary
+fine-tuning by CSS selectors. There is also a built-in [pubsubhubbub](https://en.wikipedia.org/wiki/PubSubHubbub)
+server, and it is also possible to program an arbitrary
 feed-extraction process in a simple Clojure-based [DSL](https://en.wikipedia.org/wiki/Domain-specific_language) directly through the web ui.
-Because it's designed as a Google App Engine application, it's troublesome to 
+Because it is designed as a Google App Engine application, it is troublesome to 
 create a GAE accounts, upload GAE applications and analyze web pages manually to 
 craft necessary CSS selectors, probably no one would use the app except me, 
 so here is what it looks like:
-
-[DOWNLOAD](https://github.com/GChristensen/feedxcavator2/releases/download/v2.0.3/feedxcavator-2.0.3.zip) :: [VIDEO MANUAL](https://youtu.be/jHKo4CM-Qfw)
 
 <a href="https://github.com/GChristensen/feedxcavator2/blob/master/img/xcavator.png" target="_blank"><img src="https://github.com/GChristensen/feedxcavator2/blob/master/img/xcavator_thumb.png" /></a>&nbsp;&nbsp;<a href="https://github.com/GChristensen/feedxcavator2/blob/master/img/custom.png" target="_blank"><img src="https://github.com/GChristensen/feedxcavator2/blob/master/img/custom_thumb.png" /></a>
 
 tl&dr: this is an RSS producer that is able to transform any site
 to RSS (IT'S NOT AN RSS AGGREGATOR!).
 
+See [video manual](https://youtu.be/jHKo4CM-Qfw) for more information on deployment.
+
 ### Supported CSS Subset
 
-Only the following CSS capabilities are currently supported by __feedxcavator2__:
+At the feed definition UI, in the input fields displayed on the image above, only the following 
+CSS capabilities are supported by __feedxcavator2__:
 
 <pre>
 * Elements:                     div
@@ -36,17 +37,15 @@ Only the following CSS capabilities are currently supported by __feedxcavator2__
 __feedxcavator2__ uses [enlive](https://github.com/cgrand/enlive#readme)
 library for HTML processing and internally converts all CSS selectors into
 [enlive selectors](http://enlive.cgrand.net/syntax.html).
-The conversion routine is quite straightforward, so it's 
-better to use enlive selectors in complex cases if css selectors do not work. 
+It is generally better to use enlive selectors, especially in complex cases, when CSS selectors do not work. 
 __feedxcavator2__ will assume that elnive selectors are used if the selector 
-string is wrapped in square brackets (e.g. [[:tr (attr= :colspan "2")] :a] or [root]) and will not try to convert them.
-Although, regular CSS selectors should successfully deal with relatively simple hierarchical 
-queries, which should be enough in the majority of cases.
+string is wrapped in square brackets (e.g. **[[:tr (attr= :colspan "2")] :a]**) and will not convert them to CSS.
 
 ### Ordinary and custom extractors
 
-__feedxcavator2__ will use only supplied CSS selectors to extract verbatim data if the 
-"Custom excavator" field is left blank. If not, it assumes that the field contains the name 
+__feedxcavator2__ will use only supplied CSS selectors to extract data if the 
+"Custom excavator" field at the feed definition UI is left blank. If not, it assumes that 
+the field contains the name 
 of a custom extractor function defined in Clojure programming language at the "Custom 
 extractors" page. It allows to transform the extracted data in every possible way.
 In this case field "Custom parameters" may contain a string-readable 
@@ -57,13 +56,13 @@ There are two types of processing functions which could be defined by the `defex
 the later should be used for heavy feeds fetched in the background. Functions defined
 with `defextractor` are called during the direct feed URL request by an aggregator (processing time of 
 foreground GAE instance requests is limited to one minute), functions defined with
-`defbackground` are called in background tasks defined by `deftask` macro (the tasks 
+`defbackground` are called in the background tasks defined by `deftask` macro (the tasks 
 are executed by GAE backend instances with no time limit). 
 For the feeds with `defbackground` extractors feed link request will return RSS stored earlier by 
-the task (you don't need anyhow bother on this or specify this in feed settings, 
+the task (you don't need to bother on this or specify this in the feed settings, 
 all is resolved by DSL), so RSS will change only after the next task execution. 
 
-An extractor should return a collection of headline maps with the following fields:
+An extractor should return a collection of maps (each representing a headline) with the following fields:
 ```clojure
 {
   :title "headline title" 
@@ -77,7 +76,7 @@ all other fields are ignored.
 
 Background task will also automatically notify aggregator through pubsubhubbub protocol 
 if the "Realtime" flag is checked in the feed settings, so the aggregator can get data of realtime
-feeds just after extraction.
+feeds just after the extraction.
 
 Extraction DSL example:
 
@@ -211,19 +210,10 @@ Extraction DSL example:
 ### Private Deployment
 
 You may [install](http://code.google.com/appengine/docs/java/gettingstarted/uploading.html) 
-a private [instance](https://github.com/GChristensen/feedxcavator2/releases/download/2.0.0/feedxcavator-2.0.0.zip)
-of the application on your GAE account. Оnly the account owner will be able 
+a private instance (see releases)
+of the application on your GAE account. Only the account owner will be able 
 to create or manage feeds (but still be able to share feed links). The only 
-thing you need to do is to fill-in application id in the 'appengine-web.xml' file.
-
-### Working on the code
-
-To compile the project you need to install [this](https://github.com/GChristensen/appengine-magic) fork of 
-appengine-magic into your local leiningen repository (yes, appengine-magic still works in 2017).
-
-It may be necessary to comment out :aot section in the leiningen project and clean the project if you want to 
-debug the application in a local REPL. See src/main/clj/repl.clj for the code needed to run local GAE instance
-at localhost:8080. 
+thing you need to do is to fill-in application id in 'appengine-web.xml' and 'appengine-web.2' files.
 
 ### License
 
