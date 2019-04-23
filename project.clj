@@ -11,6 +11,7 @@
                  [clj-time "0.13.0"]
                  [xerces/xercesImpl "2.11.0"]
                  [appengine-magic "0.5.1-SNAPSHOT"]
+                 [net.sourceforge.htmlunit/htmlunit "2.32"]
                  ]
   :plugins [[appengine-magic "0.5.1-SNAPSHOT"]
             [lein-cljsbuild "1.1.6"]

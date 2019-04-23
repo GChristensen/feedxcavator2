@@ -37,7 +37,7 @@
 (defsymbolmacro cookie-fields (^:key domain content timestamp))
 (defsymbolmacro settings-fields (^:key id sender-mail recipient-mail report))
 (defsymbolmacro user-sample-fields (^:key id headlines date last-fetch-count))
-
+(defsymbolmacro word-filter-fields (^:key expr type))
 
 
 
@@ -59,6 +59,7 @@
          (defentity Settings settings-fields)
          (defentity UserSample user-sample-fields)
          (defentity Sid sid-fields)
+         (defentity WordFilter word-filter-fields)
          ))
 
 (defn gunzip
@@ -317,6 +318,23 @@
         [id]
         :gae [ (ds/save! (Sid. id)) ])
 
+
+(defapi get-all-words
+  ""
+  []
+  :gae [ (ds/query :kind WordFilter) ])
+
+(defapi store-word!
+  "Stores feed settings in database."
+  [word type]
+  :gae [ (ds/save! (WordFilter. word type)) ])
+
+(defapi delete-word!
+  "Deletes the given feed."
+  [word]
+  :gae [ (ds/delete! (ds/retrieve WordFilter word)) ])
+
+
 (defapi backup-database
         ""
         []
@@ -326,6 +344,7 @@
                  :subscriptions (map #(into {} %) (ds/query :kind Subscription))
                  :custom-code (query-custom-code)
                  :settings (query-settings)
+                 :word-filter (map #(into {} %) (get-all-words))
                  })
               ])
 
@@ -338,5 +357,8 @@
                 (doseq [s (:subscriptions data)]
                   (store-subscription! (:uuid s) (:name s) (:topic s) (:callback s) (:secret s)))
                 (store-custom-code! (:custom-code data))
-                (store-settings! (:settings data)))
+                (store-settings! (:settings data))
+                (doseq [w (:word-filter data)]
+                  (store-word! (:expr w) (:type w))))
               ])
+
