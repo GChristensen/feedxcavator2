@@ -22,7 +22,9 @@
                               recent-article
                               realtime
                               custom-excavator
-                              custom-params))
+                             custom-params
+                             ;^:clj test-field
+                             ))
 
 (defsymbolmacro selector-fields (headline title link summary image))
 
@@ -38,9 +40,6 @@
 (defsymbolmacro settings-fields (^:key id sender-mail recipient-mail report))
 (defsymbolmacro user-sample-fields (^:key id headlines date last-fetch-count))
 (defsymbolmacro word-filter-fields (^:key expr type))
-
-
-
 
 (defsymbolmacro sid-fields (^:key id))
 
@@ -102,22 +101,36 @@
 (defapi query-feed
         "Reads feed settings from database."
         [feed-id]
-        :gae [ (ds/retrieve Feed feed-id) ])
+  :gae [ (when-let [feed (ds/retrieve Feed feed-id)]
+           (if (:custom-params feed)
+             (assoc feed :custom-params (.getValue (:custom-params feed)))
+             feed))
+        ])
 
 (defapi get-all-feeds
         "Gets settings of all stored feeds."
         []
-        :gae [ (ds/query :kind Feed) ])
+  :gae [ (let [feeds (ds/query :kind Feed)]
+           (for [feed feeds]
+             (if (:custom-params feed)
+               (assoc feed :custom-params (.getValue (:custom-params feed)))
+               feed)))
+        ])
 
-(defapi get-realtime-feeds
-        "Gets settings of all realtime feeds."
-        []
-        :gae [ (ds/query :kind Feed :filter (= :realtime true)) ])
+;; (defapi get-realtime-feeds
+;;         "Gets settings of all realtime feeds."
+;;         []
+;;         :gae [ (ds/query :kind Feed :filter (= :realtime true)) ])
 
 (defapi store-feed!
         "Stores feed settings in database."
         [feed-settings]
-        :gae [ (ds/save! feed-settings) ])
+  :gae [
+        (let [feed-settings (if (string? (:custom-params feed-settings))
+                              (assoc feed-settings :custom-params (ds/as-text (:custom-params feed-settings)))
+                              feed-settings)]
+          (println feed-settings)
+          (ds/save! (map->Feed feed-settings))) ])
 
 (defapi delete-feed!
         "Deletes the given feed."

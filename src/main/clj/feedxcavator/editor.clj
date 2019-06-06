@@ -38,7 +38,10 @@
       (if value
         ((enlive/set-attr :checked  "checked") node)
         ((enlive/remove-attr :checked) node))
-      ((enlive/set-attr :value value) node))
+      ;(if (string? value)
+        ((enlive/set-attr :value value) node)
+        ;((enlive/set-attr :value (.getValue value)) node)
+        )
     ((enlive/content value) node)))
 
 (defmacro fill-for-edit [field-set settings doc & body]
