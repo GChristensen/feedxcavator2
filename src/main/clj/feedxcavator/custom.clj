@@ -18,7 +18,7 @@
   (reset! *periodic-schedules* []))
 
 (defn fetch-feeds [feeds]
-  (let [feeds (filter #(some (fn [s#] (>= (.indexOf (:feed-title %) s#) 0)) feeds) (db/get-all-feeds))]
+  (let [feeds (doall (filter #(some (fn [s#] (>= (.indexOf (:feed-title %) s#) 0)) feeds) (db/get-all-feeds)))]
     (doseq [f feeds]
       (try
         (let [result (excv/perform-excavation (assoc f :background-fetching true))]
