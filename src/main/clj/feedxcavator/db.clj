@@ -1,7 +1,8 @@
 (ns feedxcavator.db
   (:require [appengine-magic.services.datastore :as ds]
             [clojure.java.io :as io]
-            [feedxcavator.api :as api])
+            [feedxcavator.api :as api]
+            [clojure.edn :as edn])
   (:use [feedxcavator.api :only [defapi]]
         clojure.tools.macro)
   (:import java.util.zip.GZIPInputStream
@@ -23,6 +24,7 @@
                               realtime
                               custom-excavator
                              custom-params
+                              breakable
                              ;^:clj test-field
                              ))
 
@@ -112,9 +114,11 @@
         []
   :gae [ (let [feeds (ds/query :kind Feed)]
            (for [feed feeds]
-             (if (:custom-params feed)
-               (assoc feed :custom-params (.getValue (:custom-params feed)))
-               feed)))
+             (do
+               ;(println feed)
+               (if (and  (:custom-params feed) (not (string? (:custom-params feed))))
+                 (assoc feed :custom-params (.getValue (:custom-params feed)))
+                 feed))))
         ])
 
 ;; (defapi get-realtime-feeds
@@ -129,7 +133,6 @@
         (let [feed-settings (if (string? (:custom-params feed-settings))
                               (assoc feed-settings :custom-params (ds/as-text (:custom-params feed-settings)))
                               feed-settings)]
-          (println feed-settings)
           (ds/save! (map->Feed feed-settings))) ])
 
 (defapi delete-feed!
@@ -353,10 +356,10 @@
         []
         :gae [(pr-str
                 {
-                 :feeds (map #(into {} %) (ds/query :kind Feed))
+                 :feeds (map #(into {} %) (get-all-feeds))
                  :subscriptions (map #(into {} %) (ds/query :kind Subscription))
                  :custom-code (query-custom-code)
-                 :settings (query-settings)
+                 ;:settings (query-settings)
                  :word-filter (map #(into {} %) (get-all-words))
                  })
               ])
@@ -364,13 +367,13 @@
 (defapi restore-database
         ""
         [edn]
-        :gae [(let [data (read-string edn)]
+        :gae [(let [data (edn/read-string (String. (:bytes edn ) "utf-8"))]
                 (doseq [f (:feeds data)]
                   (store-feed! (map->Feed f)))
                 (doseq [s (:subscriptions data)]
                   (store-subscription! (:uuid s) (:name s) (:topic s) (:callback s) (:secret s)))
                 (store-custom-code! (:custom-code data))
-                (store-settings! (:settings data))
+                ;(store-settings! (:settings data))
                 (doseq [w (:word-filter data)]
                   (store-word! (:expr w) (:type w))))
               ])

@@ -1,4 +1,4 @@
-(defproject feedxcavator "2.0.1-SNAPSHOT"
+(defproject feedxcavator "2019.0.0-SNAPSHOT"
   :description "A HTML to RSS Converter"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}

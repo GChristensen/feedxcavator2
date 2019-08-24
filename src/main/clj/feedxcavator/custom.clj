@@ -21,12 +21,20 @@
   (let [feeds (doall (filter #(some (fn [s#] (>= (.indexOf (:feed-title %) s#) 0)) feeds) (db/get-all-feeds)))]
     (doseq [f feeds]
       (try
-        (let [result (excv/perform-excavation (assoc f :background-fetching true))]
-          (when result
-            (db/store-rss! (:uuid f) result)))
+        (if (:breakable f)
+          (let [items (read-string (:custom-params f))
+                items (partition-all 5 items)]
+            (doseq [part items]
+              (try
+                (let [result (excv/perform-excavation (assoc f :background-fetching true :custom-params (pr-str part)))]
+                    (when result
+                      (db/store-rss! (:uuid f) result)))
+                (catch Exception e (.printStackTrace e)))))
+          (let [result (excv/perform-excavation (assoc f :background-fetching true))]
+            (when result
+              (db/store-rss! (:uuid f) result))))
         (catch Exception e
-          (.printStackTrace e)
-          #_(println (.getMessage e)))))
+          (.printStackTrace e))))
     (api/page-found "text/plain" "OK")))
 
 (defmacro deftask [task-name [& feeds] ]
