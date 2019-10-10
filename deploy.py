@@ -4,10 +4,14 @@ import xml.etree.ElementTree as ET
 WAR = "war"
 XMLNS = {"g": "http://appengine.google.com/ns/1.0"}
 GCLOUD = os.environ["CLOUD_SDK"] + "/google-cloud-sdk/bin/gcloud.cmd"
-APPENGINE_WEB = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                             WAR, "WEB-INF", "appengine-web.xml")
-APPENGINE_WEB_BAK = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                 WAR, "WEB-INF", "appengine-web.bak")
+
+
+def mkabscfg(file):
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), WAR, "WEB-INF", file)
+
+
+APPENGINE_WEB = mkabscfg("appengine-web.xml")
+APPENGINE_WEB_BAK = mkabscfg("appengine-web.bak")
 
 
 gae_config = ET.parse(APPENGINE_WEB)
@@ -16,13 +20,13 @@ version = root.find("g:version", XMLNS).text
 app_id = root.find("g:application", XMLNS).text
 
 
-def deploy():
-    subprocess.Popen([shutil.which("gcloud"), "app", "deploy", APPENGINE_WEB,
+def deploy(file):
+    subprocess.Popen([shutil.which("gcloud"), "app", "deploy", file,
                       "--version=" + version, "--project=" + app_id, "--quiet"],
                      stdout=sys.stdout, stderr=sys.stderr).communicate()
 
 
-deploy()
+deploy(APPENGINE_WEB)
 
 file = open(APPENGINE_WEB, 'r', encoding="utf-8")
 xml = file.read()
@@ -37,8 +41,10 @@ file = open(APPENGINE_WEB, 'w', encoding="utf-8")
 file.write(xml)
 file.close()
 
-deploy()
+deploy(APPENGINE_WEB)
 
 os.remove(APPENGINE_WEB)
 shutil.move(APPENGINE_WEB_BAK, APPENGINE_WEB)
 
+deploy(mkabscfg("queue.yaml"))
+deploy(mkabscfg("cron.yaml"))

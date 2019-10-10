@@ -131,8 +131,8 @@ the result may contain any set of fields.
 ### Feedxcavator API
 
 The full list of functions and macros available from Clojure code through the `api/` 
-namespace prefix could be found [here]() (currently undocumented). Some other prefixes
-are also could be used in Clojure code:
+namespace prefix could be found [here](https://github.com/GChristensen/feedxcavator2/blob/master/src/main/clj/feedxcavator/code_api.clj)
+(currently undocumented). Some other prefixes are also could be used in Clojure code:
 
 * `str/` - [clojure.string](https://clojure.github.io/clojure/clojure.string-api.html)
 * `json/` - [clojure.data.json](https://github.com/clojure/data.json) 
@@ -235,8 +235,8 @@ The "default" wordfilter is used if it is left blank.
 Word-filters can contain ordinary words and regular expressions (it is often useful to
 specify \b boundary to avoid excessive matching). There is no GUI to manage word-filter contents -
 words or regular expressions could be added programmatically from the "Scratch" tab or through
-the __feedxcavator2__ REST API. The author uses [these]() [UbiquityWE](https://gchristensen.github.io/ubiquitywe) commands
-for such purposes.
+the __feedxcavator2__ REST API. The author uses [these](https://gist.github.com/GChristensen/c4be3bb8508ad13d982c2f57ac302eb8) [UbiquityWE](https://gchristensen.github.io/ubiquitywe)
+commands for such purposes.
 
 ##### Clojure API to manipulate world-filters
 
@@ -376,12 +376,14 @@ will be called on its arrival.
 
 ### Private Deployment
 
-You may
-[install](https://cloud.google.com/appengine/docs/standard/java/tools/uploadinganapp)
-a private instance of the application (see releases) at your GAE account. Only
-the account owner will be able to create or manage feeds, but feed URLs are accessible
-publicly. It is necessary to provide an existing project id in the
-'appengine-web.xml' configuration file.
+You may install a private instance of the application at your GAE account (see
+releases). Only the account owner will be able to create or manage feeds, but
+feed URLs are accessible publicly. To install, create a GAE project with Java
+application and fill in its id into the `<application>` tag of the
+'appengine-web.xml' configuration file. Execute deploy.py (Python and Google
+Cloud SDK with
+[installed](https://cloud.google.com/sdk/gcloud/reference/components/install)
+app-engine-java component are required).
 
 ### License
 
