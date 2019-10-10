@@ -1,0 +1,17 @@
+/.idea
+/.nrepl-port
+*.bak
+*jar
+/lib
+/classes
+/native
+/.lein-failures
+/checkouts
+/.lein-deps-sum
+*.clj~
+/target
+/war/WEB-INF/appengine-generated
+/war/WEB-INF/lib
+/.local/credentials
+/.local/backup
+update.cmd

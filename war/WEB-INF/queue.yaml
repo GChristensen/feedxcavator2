@@ -1,0 +1,4 @@
+queue:
+- name: default
+  rate: 5/s
+  target: worker

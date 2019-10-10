@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
+
+  <application>feedxcavator</application>
+  <version>private</version>
+  <static-files/>
+  <resource-files/>
+
+  <runtime>java8</runtime>
+  <threadsafe>true</threadsafe>
+  <warmup-requests-enabled>false</warmup-requests-enabled>
+
+  <!-- 'default' service -->
+  <service>default</service>
+
+  <instance-class>F1</instance-class>
+  <automatic-scaling>
+    <min-idle-instances>1</min-idle-instances>
+    <max-idle-instances>1</max-idle-instances>
+    <max-instances>1</max-instances>
+    <min-pending-latency>automatic</min-pending-latency>
+    <max-pending-latency>400ms</max-pending-latency>
+    <max-concurrent-requests>50</max-concurrent-requests>
+  </automatic-scaling>
+  <!-- end of 'default' service -->
+
+  <!-- 'worker' service --><!--
+  <service>worker</service>
+  <instance-class>B1</instance-class>
+  <basic-scaling>
+    <max-instances>1</max-instances>
+    <idle-timeout>1m</idle-timeout>
+  </basic-scaling>
+  --><!-- end of 'worker' service -->
+
+  <inbound-services>
+    <!-- Used to handle incoming mail. -->
+    <service>mail</service>
+    <!-- Used to handle bounced mail notifications. -->
+    <service>mail_bounce</service>
+  </inbound-services>
+
+  <url-stream-handler>urlfetch</url-stream-handler>
+
+</appengine-web-app>

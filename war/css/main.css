@@ -1,0 +1,277 @@
+@import url(/css/fonts/roboto/roboto.css);
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#branding {
+    padding: 0;
+}
+
+#branding img {
+    float: left;
+}
+
+#branding h1 {
+    margin: 0;
+    margin-left: 66px;
+    padding-top: 10px;
+}
+
+#tab-content {
+    padding: 5px;
+    flex-grow: 1;
+    position: relative;
+}
+
+.tab-panel {
+    display: flex;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.treeview-container {
+    flex-grow: 0;
+    flex-basis: 20%;
+    margin: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.treeview-wrapper {
+    margin-top: 5px;
+    border: 1px solid black;
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.treeview-scroll-wrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    font-size: 11pt;
+    overflow-y: auto;
+}
+
+.treeview {
+    overflow: hidden;
+}
+
+.vakata-context {
+    z-index: 10000;
+}
+
+.itemview-container {
+    flex-basis: 80%;
+    margin: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.itemview {
+    flex-basis: 70%;
+    display: flex;
+    flex-direction: column;
+}
+
+.goog-toolbar > .goog-toolbar-button {
+    width: max-content;
+}
+
+.main-editor-wrapper {
+    flex-grow: 1;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.main-editor, .output-editor {
+    width: 100%;
+    height: 100%;
+}
+
+.status-bar {
+    margin-bottom: 5px;
+    font-size: 10pt;
+    display: flex;
+}
+
+.output-label, .processing-indicator {
+    flex-grow: 0;
+}
+
+.processing-indicator {
+    padding-top: 2px;
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+.output-editor-wrapper {
+    flex-basis: 30%;
+}
+
+#settings-wrapper {
+    width: max-content;
+}
+
+fieldset.settings {
+    margin-top: 10px;
+    width: 550px;
+    font-size: 11pt;
+    border-width: 1px;
+    border-radius: 5px;
+}
+
+.customization-settings td:first-of-type {
+    width: 1%;
+    white-space: nowrap;
+    padding-right: 5px;
+}
+
+#subscription-url {
+    margin-bottom: 3px;
+}
+
+#auth-token {
+    user-select: all;
+}
+
+#generate-auth-key-button {
+    float: right;
+    margin-top: -2px;
+}
+
+#app-version {
+    text-align: right;
+    padding-top: 5px;
+    padding-right: 5px;
+}
+
+#log-panel {
+    flex-direction: column;
+}
+
+#log-output-container {
+    flex-grow: 1;
+    padding-top: 10px;
+}
+
+#log-output-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#log-output {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    overflow-y: scroll;
+}
+
+.log-entry {
+    margin-top: 10px;
+    border-top: 1px solid black;
+    position: relative;
+}
+
+.log-top-bar {
+    display: flex;
+    background: transparent;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -8px;
+    font-size: 10pt;
+    padding-left: 0;
+    padding-right: 0;
+    cursor: pointer;
+}
+
+.log-top-bar-spacer {
+    flex-grow: 1;
+}
+
+.log-timestamp {
+    background: white;
+    flex-grow: 0;
+    flex-shrink: 1;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.log-source {
+    display: inline-block;
+    padding-left: 5px;
+}
+
+.log-entry-buttons {
+    flex-grow: 0;
+    flex-shrink: 1;
+    background-color: white;
+    font-size: 9pt;
+    padding-left: 5px;
+    padding-right: 5px;
+    display: flex;
+}
+
+.log-entry-unwrapper {
+    padding-right: 5px;
+}
+
+.pre-wrapped {
+    white-space: pre-wrap;
+}
+
+.log-message {
+    padding-left: 20px;
+    padding-bottom: 10px;
+    font-size: 11pt;
+    overflow: hidden;
+    max-height: 100px;
+}
+
+.log-message.expanded {
+    max-height: unset;
+}
+
+.log-icon {
+    width: 11px;
+    height: 11px;
+    margin-right: 4px;
+}
+
+#log-loader-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#log-loading-indicator {
+    width: 109px;
+    height: 10px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -5px;
+    margin-left: -55px;
+}

@@ -1,0 +1,11 @@
+cron:
+- description: Task checker
+  url: /backend/check-schedules
+  schedule: every 1 minutes
+- description: Service task
+  url: /backend/service-task-front
+  schedule: every day 00:00
+- description: Service task
+  url: /backend/service-task-background
+  schedule: every day 00:00
+  target: worker

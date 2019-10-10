@@ -1,0 +1,1 @@
+LEIN_HOME=d:/sandbox/.lein;JAVA_OPTS=-Duser.home=d:\sandbox;LEIN_JVM_OPTS=-Duser.home=d:\sandbox;HOME=d:\sandbox;APPENGINE_SDK=D:\software\dev\appengine-sdk
