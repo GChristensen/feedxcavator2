@@ -372,6 +372,18 @@ will be called on its arrival.
           :link (tag-content :link)
           :summary (tag-content :description)
          }))))
+
+;; handlers
+
+(defhandler ^:auth kitty-handler request
+  (if (= (:request-method request) :get)  ;; for the GET request return kitty feed for processing
+    (let [feed (db/find-feed :suffix "kitty-site")
+          output (db/fetch-feed-output (:uuid feed))]
+      (api/web-page (:content-type output) (:output output)))
+    (let [feed (db/find-feed :suffix "kitty-site")] ;; store processed output otherwise
+      (db/store-feed-output! (:uuid feed) 
+                             {:content-type "application/json" 
+                              :output (slurp (:body request))}))))
 ```
 
 ### Private Deployment
