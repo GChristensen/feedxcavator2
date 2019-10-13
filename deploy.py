@@ -3,7 +3,6 @@ import xml.etree.ElementTree as ET
 
 WAR = "war"
 XMLNS = {"g": "http://appengine.google.com/ns/1.0"}
-GCLOUD = os.environ["CLOUD_SDK"] + "/google-cloud-sdk/bin/gcloud.cmd"
 
 
 def mkabscfg(file):
