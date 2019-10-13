@@ -330,11 +330,15 @@ source: https://example.com
   (log/write "executing background service task")
   (code/reset-completed-schedules)
   (let [week-ago (- (core/timestamp) 604800000)
-        old-images (db/query :image (> :timestamp week-ago))
-        old-log-entries (db/query :log-entry (> :timestamp week-ago))]
+        old-images (db/query :image (< :timestamp week-ago))
+        old-log-entries (db/query :log-entry (< :timestamp week-ago))]
+    (log/write (str "Deleting these images: \n"
+                    (apply str (map #(str (:uuid %) "\n") old-images))))
     (doseq [image old-images]
       (db/delete-image! (:uuid image)))
 
+    (log/write (str "Deleting these log entries: \n"
+                    (apply str (map #(str (:uuid %) "\n") old-log-entries))))
     (db/delete*! (map #(db/->entity :log-message {:uuid (:uuid %)}) old-log-entries))
     (db/delete*! old-log-entries))
   (core/web-page "text/plain" "OK"))

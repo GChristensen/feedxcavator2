@@ -59,6 +59,7 @@
 (def parse-page-range extraction/parse-page-range)
 (def parse-pages extraction/parse-pages)
 (def filter-history extraction/filter-history)
+(def filter-history! extraction/filter-history!)
 (def filter-content extraction/filter-content)
 (def filter-headlines extraction/filter-headlines)
 (def add-filter-word extraction/add-filter-word)

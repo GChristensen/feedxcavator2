@@ -308,8 +308,8 @@ will be called on its arrival.
                  ;; stage 1: extract thread URLs from forum pages (the corresponding  
                  ;; selectors should be specified in the feed settings) and filter out 
                  ;; already seen urls
-                 threads (api/filter-history forum-url (parse-page forum-url))]                                             
-             (when (not (empty? threads))
+                 threads (api/filter-history! forum-url (parse-page forum-url))]                                             
+             (when (seq threads)
                ;; stage 2: fetch thread pages and extract rendered html contents  
                ;; of the first posts using enlive
                (for [thread threads]

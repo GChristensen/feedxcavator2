@@ -41,8 +41,8 @@
                         ; (See the ClojureScript compiler documentation for details.)
                         :compiler     {
                                        :output-to   "war/js/main.js"
-                                       :optimizations :whitespace ;:advanced
-                                       :pretty-print  true ;false
+                                       :optimizations :advanced ;:whitespace ;:advanced
+                                       :pretty-print  false ;true ;false
                                        :infer-externs true
                                        :externs ["src/main/js/externs.js"
                                                  "war/js/jstree/jstree.js"]

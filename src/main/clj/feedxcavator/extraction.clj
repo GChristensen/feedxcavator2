@@ -223,6 +223,11 @@
 
 (defn filter-history [feed-or-uuid headlines]
   (let [uuid (or (:uuid feed-or-uuid) feed-or-uuid)
+        history (or (:items (db/fetch :history uuid)) #{})]
+    (filter #(not (history (:link %))) headlines)))
+
+(defn filter-history! [feed-or-uuid headlines]
+  (let [uuid (or (:uuid feed-or-uuid) feed-or-uuid)
         history (or (:items (db/fetch :history uuid)) #{})
         result (filter #(not (history (:link %))) headlines)]
     (db/store! :history {:uuid uuid :items (set (map #(:link %) headlines))})
@@ -304,7 +309,7 @@
 (defn filter-headlines [feed headlines]
   (if (:filter feed)
     (let [headlines (if (and (:history (:filter feed)) (not (:testing (meta feed))))
-                      (filter-history (:uuid feed) headlines)
+                      (filter-history! (:uuid feed) headlines)
                       headlines)
           headlines (if (:content (:filter feed))
                       (filter-content feed headlines)

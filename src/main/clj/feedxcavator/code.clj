@@ -106,7 +106,7 @@
          (println ~(str "executing " (name fun-name)))
          (binding [core/*current-feed* ~feed]
            (let [headlines# (extraction/filter-headlines ~feed (do ~@body))]
-             (when (not (empty? headlines#))
+             (when (seq headlines#)
                (extraction/produce-feed-output ~feed headlines#)))))
        (defn ~(symbol (str (name fun-name) "-test")) [~feed]
          (~extractor-fun ~feed))
@@ -137,7 +137,7 @@
          (if (:background (meta ~feed))
            (binding [core/*current-feed* ~feed]
              (let [headlines# (extraction/filter-headlines ~feed (do ~@body))]
-               (when (not (empty? headlines#))
+               (when (seq headlines#)
                  (handle-background-feed ~feed headlines#))))
            (db/fetch-feed-output (:uuid ~feed))))
        (defextractor ~fun-name [~feed] ~@body)
