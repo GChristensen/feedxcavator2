@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
 
-  <application>feedxcavator</application>
+  <application>feedxcavator2</application>
   <version>private</version>
   <static-files/>
   <resource-files/>

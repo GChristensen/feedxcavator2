@@ -195,6 +195,11 @@ that will be executed sequentially in the specified order.
 Scheduling macros accept UTC-based time values, a task could be scheduled several times.
 See the examples for more details.
 
+It is possible to run a task at any time through the task context menu:
+
+![run task](https://raw.githubusercontent.com/GChristensen/feedxcavator2/master/media/run-task.png)
+
+
 ### Handlers
 
 __feedxvavator2__ handlers allow to create a custom web-api to manipulate your feeds.
