@@ -90,8 +90,7 @@
                                        (fn [entries]
                                          (reset! oldest-log-entry (:number (last entries)))
                                          (doseq [entry entries]
-                                           (dommy/append! log-output
-                                                          (print-log-entry log-output entry))))))))))
+                                           (print-log-entry log-output entry)))))))))
 
   (update-log))
 

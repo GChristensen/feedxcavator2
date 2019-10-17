@@ -118,6 +118,7 @@
                   [:item
                    [:title (item-entry :title headline)]
                    [:link (item-entry :link headline)]
+                   ;[:pubDate (fmt/unparse (fmt/formatters :rfc822) (tm/now))]
                    (if (:guid headline)
                      [:guid {:isPermaLink "false"} (item-entry :guid headline)]
                      (when (:realtime feed)

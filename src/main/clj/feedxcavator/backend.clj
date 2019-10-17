@@ -327,7 +327,6 @@ source: https://example.com
   (core/web-page "text/plain" "OK"))
 
 (defn service-task-background []
-  (log/write "executing background service task")
   (code/reset-completed-schedules)
   (let [week-ago (- (core/timestamp) 604800000)
         old-images (db/query :image (< :timestamp week-ago))
