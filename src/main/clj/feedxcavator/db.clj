@@ -119,7 +119,8 @@
       (store! :feed-params {:uuid (:uuid feed) :params params}))))
 
 (defn extra [feed field]
-  ((:$$extra feed) field))
+  (when-let [extra-fields (:$$extra feed)]
+    (extra-fields field)))
 
 ;; cloud storage ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

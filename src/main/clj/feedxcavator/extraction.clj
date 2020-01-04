@@ -127,11 +127,11 @@
                      [:author (item-entry :author headline)])
                    [:description (item-entry :summary headline)]
                    (when (:image headline)
-                     [:enclosure {:url  (item-entry :image headline)
+                     [:enclosure {:url  (:image headline)
                                   :type (if (:image-type headline)
-                                          (item-entry :image-type headline)
+                                          (:image-type headline)
                                           (ext-mime-type
-                                            (item-entry :image headline)))}])])]])]
+                                            (:image headline)))}])])]])]
     (str xml-header rss)))
 
 (defn generate-json-feed [feed headlines]

@@ -232,9 +232,9 @@
     (try
       (fetch-fn task-params)
       (catch Throwable e
+        (.printStackTrace e)
         (log/with-logging-source task-params
-          (log/write :error e))
-        (.printStackTrace e)))
+          (log/write :error e))))
     (core/web-page "text/plain" "OK")))
 
 (defmacro defhandler [& params]
