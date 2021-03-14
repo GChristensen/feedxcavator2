@@ -240,7 +240,7 @@ The "default" wordfilter is used if it is left blank.
 Word-filters can contain ordinary words and regular expressions (it is often useful to
 specify \b boundary to avoid excessive matching). There is no GUI to manage word-filter contents -
 words or regular expressions could be added programmatically from the "Scratch" tab or through
-the __feedxcavator2__ REST API. The author uses [these](https://gist.github.com/GChristensen/c4be3bb8508ad13d982c2f57ac302eb8) [UbiquityWE](https://gchristensen.github.io/ubiquitywe)
+the __feedxcavator2__ REST API. The author uses [these](https://gist.github.com/GChristensen/c4be3bb8508ad13d982c2f57ac302eb8) [iShell](https://gchristensen.github.io/ishell)
 commands for such purposes.
 
 ##### Clojure API to manipulate world-filters
