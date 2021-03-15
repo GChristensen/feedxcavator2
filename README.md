@@ -46,7 +46,7 @@ pages: # pagination parameters
   path: '/?page=%n' # page path template, appended to the source URL
   increment: 1 # increment of the path parameter
   start: 2 # the initial value of the path parameter
-  end: 2 # the maximum value of the path parameter
+  end: 3 # the maximum value of the path parameter
 filter: # filtering options
   history: true # feed will omit items seen at the previous time if true  
   content: title+summary # also "title", the feed will be filtered by content if specified
@@ -88,10 +88,10 @@ selectors directly: __feedxcavator2__ will not try to convert a selector if it
 
 ### Automatic and custom feed extraction
 
-__feedxcavator2__ will use only supplied CSS selectors to extract data if the
+__feedxcavator2__ will use only supplied CSS selectors to automatically extract data if the
 "extractor" field of the YAML config is not specified. Otherwise, it is assumed
 that the field contains the name of an extractor function that should be invoked
-to provide content. Extractor functions could be coded in Clojure programming
+to provide content. Extractor functions should be coded in Clojure programming
 language at the "Extractors" tab. 
 
 There are two types of extractors which are defined by the `defextractor` and
@@ -110,9 +110,9 @@ feed settings, all is resolved by DSL). In the case of background feeds an
 aggregator obtains previously stored feed content from the database, so the feed
 will change only after the next task execution.
 
-For the generation of [RSS](https://en.wikipedia.org/wiki/RSS) or [JSON-feed](https://jsonfeed.org/)
-content by the application extractors should return a collection of Clojure maps (each
-representing a headline) with the following set of fields:
+Extractors should return a collection of Clojure maps (each
+representing an [RSS](https://en.wikipedia.org/wiki/RSS) or [JSON-feed](https://jsonfeed.org/) headline entry) 
+with the following set of fields:
 
 ```clojure
 {
@@ -125,14 +125,14 @@ representing a headline) with the following set of fields:
 }
 ```
 
-all other fields are ignored. But if the feed is serialized into plain JSON or EDN, 
+all other fields are ignored. Although, if the feed is serialized into plain JSON or EDN, 
 the result may contain any set of fields.
 
 ### Feedxcavator API
 
 The full list of functions and macros available from Clojure code through the `api/` 
 namespace prefix could be found [here](https://github.com/GChristensen/feedxcavator2/blob/master/src/main/clj/feedxcavator/code_api.clj)
-(currently undocumented). Some other prefixes are also could be used in Clojure code:
+(currently undocumented). Some other namespace prefixes are also could be used in Clojure code:
 
 * `str/` - [clojure.string](https://clojure.github.io/clojure/clojure.string-api.html)
 * `json/` - [clojure.data.json](https://github.com/clojure/data.json) 
@@ -217,7 +217,7 @@ Some high-level database primitives are available in `db/` namespace:
 
 * `(defn find-feed [& {:keys [suffix title]}] ...` - retrieve a feed by its suffix or title using :suffix or :title keyword arguments
 * `(defn persist-feed! [feed] ...` - persists the supplied feed object; currently only the modification of :params feed field is allowed, all other changes may be lost
-* `(defn fetch-object [uuid] ...` - fetch a Clojure object by the uuid
+* `(defn fetch-object [uuid] ...` - fetch a serializable Clojure object/collection by the uuid
 * `(defn store-object! [uuid object] ...` - store any serializable Clojure collection with the supplied uuid
 * `(defn delete-object! [uuid] ...` - delete an object
 
@@ -238,10 +238,10 @@ The name of the word-filter could be specified in the "wordfilter" parameter of 
 The "default" wordfilter is used if it is left blank. 
 
 Word-filters can contain ordinary words and regular expressions (it is often useful to
-specify \b boundary to avoid excessive matching). There is no GUI to manage word-filter contents -
+specify \b boundary to avoid excessive matching). Currently, there is no GUI to manage word-filter contents -
 words or regular expressions could be added programmatically from the "Scratch" tab or through
-the __feedxcavator2__ REST API. The author uses [these](https://gist.github.com/GChristensen/c4be3bb8508ad13d982c2f57ac302eb8) [iShell](https://gchristensen.github.io/ishell)
-commands for such purposes.
+the __feedxcavator2__ REST API. The author uses [these](https://gist.github.com/GChristensen/c4be3bb8508ad13d982c2f57ac302eb8)
+commands of [iShell Extension](https://gchristensen.github.io/ishell) for such purposes.
 
 ##### Clojure API to manipulate world-filters
 
