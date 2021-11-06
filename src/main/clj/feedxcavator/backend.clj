@@ -249,6 +249,9 @@ source: https://example.com
 (defn redirect [url]
   (core/redirect-to url))
 
+(defn redirect-b64 [url]
+  (core/redirect-to (core/url-safe-base64dec url)))
+
 (defn add-filter-regex [request]
   (core/authorized request
                    (let [params (:body request)
@@ -328,9 +331,9 @@ source: https://example.com
 
 (defn service-task-background []
   (code/reset-completed-schedules)
-  (let [week-ago (- (core/timestamp) 604800000)
-        old-images (db/query :image (< :timestamp week-ago))
-        old-log-entries (db/query :log-entry (< :timestamp week-ago))]
+  (let [days-ago (- (core/timestamp) 259200000)
+        old-images (db/query :image (< :timestamp days-ago))
+        old-log-entries (db/query :log-entry (< :timestamp days-ago))]
     (doseq [image old-images]
       (db/delete-image! (:uuid image)))
     (db/delete*! (map #(db/->entity :log-message {:uuid (:uuid %)}) old-log-entries))

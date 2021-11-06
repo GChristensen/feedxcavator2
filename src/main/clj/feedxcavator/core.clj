@@ -21,7 +21,7 @@
         clojure.tools.macro
         clojure.walk))
 
-(def ^:const app-version "2.1.0")
+(def ^:const app-version "2.2.0")
 
 (def ^:const deployment-type :private) ;; :private, :demo
 (def ^:const blob-implementation :datastore) ;; :cloudstorage, :datastore
@@ -249,6 +249,9 @@
 (defn redirect-url [url]
   (str *app-host* "/redirect/" (generate-random 10) "/" (url-encode-utf8 url)))
 
+(defn redirect-url-b64 [url]
+  (str *app-host* "/redirect-b64/" (generate-random 10) "/" (url-safe-base64enc url)))
+
 (defn get-websub-url [] (str *app-host* "/websub"))
 
 (defn get-feed-url [feed]
@@ -333,6 +336,7 @@
 (def ^:dynamic *last-http-response* (atom nil))
 (def ^:dynamic *last-http-error-code* (atom nil))
 (def ^:dynamic *last-http-network-error* (atom nil))
+(def ^:dynamic *last-http-conversion-error* (atom nil))
 
 (defn get-last-http-response []
   @*last-http-response*)
@@ -342,6 +346,9 @@
 
 (defn get-last-network-error []
   @*last-http-network-error*)
+
+(defn get-last-conversion-error []
+  @*last-http-conversion-error*)
 
 (defmacro safely-repeat-fetch-url [statement]
   `(try
@@ -356,6 +363,7 @@
   (reset! *last-http-response* nil)
   (reset! *last-http-error-code* nil)
   (reset! *last-http-network-error* nil)
+  (reset! *last-http-conversion-error* nil)
 
   (let [params-map (apply hash-map params)
         response-type (params-map :as)
@@ -380,7 +388,8 @@
               (= response-type :json) (json/read-str (resp->str response charset))
               (= response-type :string) (resp->str response charset)
               :else response)
-        (catch Error e
+        (catch Exception e
+          (reset! *last-http-conversion-error* true)
           (.printStackTrace e)))
       (do
         (reset! *last-http-response* response)

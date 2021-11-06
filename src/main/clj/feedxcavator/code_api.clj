@@ -19,6 +19,7 @@
 (def text-page core/text-page)
 (def redirect-to core/text-page)
 (def redirect-url core/redirect-url)
+(def redirect-url-b64 core/redirect-url-b64)
 (def timestamp core/timestamp)
 (def distinct-by core/distinct-by)
 (def regex-escape core/regex-escape)
@@ -48,6 +49,7 @@
 (def get-last-http-response core/get-last-http-response)
 (def get-last-http-error core/get-last-http-error)
 (def get-last-network-error core/get-last-network-error)
+(def get-last-conversion-error core/get-last-conversion-error)
 (def get-feed-url core/get-feed-url)
 (def get-app-host core/get-app-host)
 

@@ -1,5 +1,6 @@
 /.idea
 /.nrepl-port
+/.local
 *.bak
 *jar
 /lib

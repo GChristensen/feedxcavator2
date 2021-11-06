@@ -50,6 +50,7 @@
   (ANY "/image/:name" [name] (backend/serve-image name))
   (ANY "/handler/:handler" request (code/execute-handler request))
   (ANY "/redirect/:random/:url" [random url] (backend/redirect url))
+  (ANY "/redirect-b64/:random/:url" [random url] (backend/redirect-b64 url))
   (ANY "/websub" request (websub/hub-action request))
 
   (ANY "/_ah/mail/*" request (backend/receive-mail request))
@@ -74,7 +75,8 @@
                 core/*current-logging-source* nil
                 core/*last-http-response* (atom nil)
                 core/*last-http-error-code* (atom nil)
-                core/*last-http-network-error* (atom nil)]
+                core/*last-http-network-error* (atom nil)
+                core/*last-http-conversion-error* (atom nil)]
 
         (when (not @user-code-compiled)
           (try

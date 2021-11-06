@@ -1,4 +1,4 @@
-(defproject feedxcavator "2.1.0-SNAPSHOT"
+(defproject feedxcavator "2.2.0-SNAPSHOT"
   :description "A programmable RSS server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -18,7 +18,7 @@
                  [io.forward/yaml "1.0.9"]
                  [appengine-magic "0.5.1-SNAPSHOT"]
                  [com.oscaro/clj-gcloud-storage "0.71-1.2"]
-                 [net.sourceforge.htmlunit/htmlunit "2.36.0"]
+                 [net.sourceforge.htmlunit/htmlunit "2.41.0"]
                  ;[clj-http "3.10.0"]
                  ]
   :plugins [[appengine-magic "0.5.1-SNAPSHOT"]

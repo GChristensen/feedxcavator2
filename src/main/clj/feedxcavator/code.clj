@@ -120,7 +120,7 @@
         (if (:partition feed)
           (let [feed-url (core/get-feed-url feed)
                 parts (partition-all (:partition feed) headlines)]
-            (doseq [part parts]
+            (doseq [part (reverse parts)]
               (Thread/sleep 1000)
               (websub/publish-content (:uuid feed) feed-url (extraction/produce-feed-output feed part))))
           (websub/publish-content (:uuid feed) (core/get-feed-url feed) output))

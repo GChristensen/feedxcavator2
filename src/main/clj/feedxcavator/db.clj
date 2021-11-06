@@ -101,7 +101,7 @@
   (store! :_object {:uuid uuid :object obj}))
 
 (defn delete-object! [uuid]
-  (delete! :_object {:uuid uuid}))
+  (delete! :_object uuid))
 
 (defn find-feed [& {:keys [title suffix]}]
   (let [feed (first
@@ -215,11 +215,11 @@
   (let [blob-id (gcs/->blob-id default-bucket (str "blob/" (:uuid obj)))
         blob-info (gcs/blob-info blob-id {:content-type (:content-type obj)})
         blob (create-blob blob-info)]
-    ;(when (:public obj)
-    ;  (.createAcl cloud-storage blob-id (Acl/of (Acl$User/ofAllUsers) Acl$Role/READER)))
     (with-open [from (io/input-stream (:bytes obj))
                 to   (Channels/newOutputStream (gcs/write-channel blob))]
-      (io/copy from to))))
+      (io/copy from to))
+    (when (:public obj)
+      (.createAcl cloud-storage blob-id (Acl/of (Acl$User/ofAllUsers) Acl$Role/READER)))))
 
 (defn delete-blob! [uuid]
   (let [blob-id (gcs/->blob-id default-bucket (str "blob/" uuid))]
@@ -230,7 +230,7 @@
   (first (query :image (= :url url))))
 
 (defn get-cloud-image-url [uuid]
-  (str "https://storage.cloud.google.com/" default-bucket "/blob/image/" uuid))
+  (str "https://storage.googleapis.com/" default-bucket "/blob/image/" uuid))
 
 (defn get-image-url [uuid]
   (str (core/get-app-host) "/image/" uuid))
