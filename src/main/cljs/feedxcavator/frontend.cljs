@@ -23,6 +23,18 @@
         (str/includes? tab-id "-code-") (show-code-tab (first (str/split tab-id #"-")))
     ))
 
+(defn set-active-tab [tabbar]
+  (let [hash (.-hash js/location)
+        hash (if (not= hash "")
+               (.substring hash 1)
+               nil)
+        tab-id (when hash (str hash "-tab"))]
+    (if tab-id
+      (let [tab (.getChild tabbar tab-id)]
+        (.setSelectedTab tabbar tab)
+        (set-main-content tab-id))
+      (set-main-content "feeds-tab"))))
+
 (defn ^:export main []
   (let [tabbar (TabBar.)]
     (.decorate tabbar (sel1 :#tabbar))
@@ -30,7 +42,7 @@
                    (fn [e]
                      (let [tab-id (.getId (.-target e))]
                        (set-main-content tab-id))))
-    (set-main-content "feeds-tab")
+    (set-active-tab tabbar)
     (ajax/get-edn "/front/get-settings"
                   (fn [settings]
                     (set! (.-feedxcavatorSettings js/window) settings)))
