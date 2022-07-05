@@ -21,7 +21,7 @@
         clojure.tools.macro
         clojure.walk))
 
-(def ^:const app-version "2.2.0")
+(def ^:const app-version "2.2.1")
 
 (def ^:const deployment-type :private) ;; :private, :demo
 (def ^:const blob-implementation :datastore) ;; :cloudstorage, :datastore

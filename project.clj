@@ -19,6 +19,7 @@
                  [appengine-magic "0.5.1-SNAPSHOT"]
                  [com.oscaro/clj-gcloud-storage "0.71-1.2"]
                  [net.sourceforge.htmlunit/htmlunit "2.41.0"]
+                 [org.sejda.imageio/webp-imageio "0.1.6"]
                  ;[clj-http "3.10.0"]
                  ]
   :plugins [[appengine-magic "0.5.1-SNAPSHOT"]

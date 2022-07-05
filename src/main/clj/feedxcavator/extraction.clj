@@ -228,11 +228,13 @@
     (filter #(not (history (:link %))) headlines)))
 
 (defn filter-history! [feed-or-uuid headlines]
-  (let [uuid (or (:uuid feed-or-uuid) feed-or-uuid)
-        history (or (:items (db/fetch :history uuid)) #{})
-        result (filter #(not (history (:link %))) headlines)]
-    (db/store! :history {:uuid uuid :items (set (map #(:link %) headlines))})
-    result))
+  (if (seq headlines)
+    (let [uuid (or (:uuid feed-or-uuid) feed-or-uuid)
+          history (or (:items (db/fetch :history uuid)) #{})
+          result (filter #(not (history (:link %))) headlines)]
+      (db/store! :history {:uuid uuid :items (set (map #(:link %) headlines))})
+      result)
+    '()))
 
 (defn add-filter-word
   ([word-filter word]
