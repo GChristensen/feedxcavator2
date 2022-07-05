@@ -1,4 +1,4 @@
-(defproject feedxcavator "2.2.0-SNAPSHOT"
+(defproject feedxcavator "2.2.1-SNAPSHOT"
   :description "A programmable RSS server"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
