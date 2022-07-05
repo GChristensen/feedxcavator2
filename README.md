@@ -59,7 +59,7 @@ params: [any addiitional data, [123, 456]] # arbitrary feed parameters available
 
 In the Clojure code all the mentioned options of the YAML config are directly
 available as fields of the `feed` extractor function argument (see examples
-below). Any other fields could be accessed through the `(api/extra feed :field)`
+below). Any other fields could be accessed through the `(api/extra feed :my-field)`
 call.
 
 ### Supported CSS subset
