@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
-
   <application>feedxcavator2</application>
   <version>private</version>
   <static-files/>
   <resource-files/>
 
-  <runtime>java8</runtime>
+  <runtime>java17</runtime>
+  <app-engine-apis>true</app-engine-apis>
   <threadsafe>true</threadsafe>
   <warmup-requests-enabled>false</warmup-requests-enabled>
 
@@ -41,5 +41,4 @@
   </inbound-services>
 
   <url-stream-handler>urlfetch</url-stream-handler>
-
 </appengine-web-app>
