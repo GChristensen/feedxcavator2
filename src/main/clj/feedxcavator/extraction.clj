@@ -12,7 +12,7 @@
 
 (def ^:const xml-header "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
 
-(defn css-to-enlive [line]
+(defn css-selector-to-enlive [line]
   (let [line (str/replace line #">" " > ")
         line (str/trim (str/replace line #"[ ]+" " "))
         tokens (str/split line #" ")
@@ -56,6 +56,11 @@
         enlive-selector (str "[" (apply str (interpose " " tokens)) "]")]
     ;; (println enlive-selector)
     (read-string enlive-selector)))
+
+(defn css-to-enlive [line]
+  (if (str/includes? line ",")
+    (set (map css-selector-to-enlive (str/split line #","))))
+    (css-selector-to-enlive line))
 
 (defn eval-selector [sel]
   (binding [*ns* (find-ns 'net.cgrand.enlive-html)]
@@ -227,14 +232,20 @@
         history (or (:items (db/fetch :history uuid)) #{})]
     (filter #(not (history (:link %))) headlines)))
 
-(defn filter-history! [feed-or-uuid headlines]
+(defn filter-history-by! [feed-or-uuid headlines field]
   (if (seq headlines)
     (let [uuid (or (:uuid feed-or-uuid) feed-or-uuid)
           history (or (:items (db/fetch :history uuid)) #{})
-          result (filter #(not (history (:link %))) headlines)]
-      (db/store! :history {:uuid uuid :items (set (map #(:link %) headlines))})
+          result (filter #(not (history (field %))) headlines)]
+      (db/store! :history {:uuid uuid :items (set (map #(field %) headlines))})
       result)
     '()))
+
+(defn filter-history! [feed-or-uuid headlines]
+  (filter-history-by! feed-or-uuid headlines :link))
+
+(defn filter-history-by-guid! [feed-or-uuid headlines]
+  (filter-history-by! feed-or-uuid headlines :guid))
 
 (defn add-filter-word
   ([word-filter word]

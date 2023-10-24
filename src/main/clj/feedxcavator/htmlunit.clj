@@ -1,9 +1,9 @@
 (ns feedxcavator.htmlunit
   (:require [clojure.string :as str]
             [feedxcavator.log :as log])
-  (:import [com.gargoylesoftware.htmlunit BrowserVersion WebClient CookieManager
+  (:import [org.htmlunit BrowserVersion WebClient CookieManager
                                           HttpMethod WebRequest]
-           [com.gargoylesoftware.htmlunit.util FalsifyingWebConnection]
+           [org.htmlunit.util FalsifyingWebConnection]
            [java.net URL]))
 
 (defn htmlunit-client [& {:keys [enable-js js-timeout filter-js] :or {js-timeout 30000}}]

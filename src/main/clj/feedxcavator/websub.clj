@@ -49,12 +49,20 @@
           headers (if sig
                     (assoc headers "X-Hub-Signature" (str "sha1=" sig))
                     headers)
-          response (core/fetch-url (:callback subscr)
+          callback (:callback subscr)
+          callback (if (str/includes? callback "feedly.com")
+                         (str callback "&hub.mode=publish")
+                         callback)
+          response (core/fetch-url callback
                                    :method :post
                                    :headers headers
                                    :payload (.getBytes (:output content) "utf-8"))]
-      ;(println (str "id: " uuid "\nlen: " (.length (:output content)) "\nresp: "
-      ;              (slurp (:content response) :encoding "utf-8")))
+      (when (nil? response)
+        (let [error (format "HTTP error during WebSub publishing: %d\nresponse content: %s\nHTTP response: %s"
+                            (core/get-last-http-error)
+                            (slurp (:content (core/get-last-http-response)))
+                            (with-out-str (clojure.pprint/pprint (core/get-last-http-response))))]
+          (log/write :error error)))
       {:status 204})))
 
 (defn publish [params]

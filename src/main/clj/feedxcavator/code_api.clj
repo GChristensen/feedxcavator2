@@ -62,6 +62,7 @@
 (def parse-pages extraction/parse-pages)
 (def filter-history extraction/filter-history)
 (def filter-history! extraction/filter-history!)
+(def filter-history-by-guid! extraction/filter-history-by-guid!)
 (def filter-content extraction/filter-content)
 (def filter-headlines extraction/filter-headlines)
 (def add-filter-word extraction/add-filter-word)
