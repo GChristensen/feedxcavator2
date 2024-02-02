@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
-  <application>feedxcavator2</application>
+  <application></application>
   <version>private</version>
   <static-files/>
   <resource-files/>
@@ -26,7 +26,7 @@
 
   <!-- 'worker' service --><!--
   <service>worker</service>
-  <instance-class>B1</instance-class>
+  <instance-class>B4</instance-class>
   <basic-scaling>
     <max-instances>1</max-instances>
     <idle-timeout>1m</idle-timeout>
@@ -40,5 +40,5 @@
     <service>mail_bounce</service>
   </inbound-services>
 
-  <url-stream-handler>urlfetch</url-stream-handler>
+    <url-stream-handler>urlfetch</url-stream-handler>
 </appengine-web-app>

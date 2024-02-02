@@ -1,3 +1,8 @@
+# DISCONTINUED
+
+Please see [Feedxcavator 3](https://github.com/GChristensen/feedxcavator)
+
+-----
 # feedxcavator2
 
 This [Google App Engine](https://cloud.google.com/appengine/) application is
@@ -5,8 +10,7 @@ able to convert anything to [RSS](https://en.wikipedia.org/wiki/RSS) with an
 arbitrary level of fine-tuning. It provides a built-in
 [WebSub](https://en.wikipedia.org/wiki/WebSub) server for real-time feed updates
 and allows to program a feed-extraction process in a simple Clojure-based
-[DSL](https://en.wikipedia.org/wiki/Domain-specific_language) directly through
-the web-UI (see a [demo](https://gchristensen.github.io/feedxcavator2-demo/console.html)).
+[DSL](https://en.wikipedia.org/wiki/Domain-specific_language) directly through the web-UI.
 
 ### Overview
 

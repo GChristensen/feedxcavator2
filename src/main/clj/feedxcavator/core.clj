@@ -24,7 +24,7 @@
 (def ^:const app-version "2.2.1")
 
 (def ^:const deployment-type :private) ;; :private, :demo
-(def ^:const blob-implementation :cloudstorage) ;; :cloudstorage, :datastore
+(def ^:const blob-implementation :datastore) ;; :cloudstorage, :datastore
 
 (def ^:const worker-url-prefix "worker")
 

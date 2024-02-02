@@ -340,6 +340,12 @@ source: https://example.com
     (db/delete*! old-log-entries))
   (core/web-page "text/plain" "OK"))
 
+(defn import-word-filter [word-filter]
+  (let [words (map #(if (str/starts-with? % "(i?)") (re-pattern %) %)
+                   (:words word-filter))]
+    (db/store! :word-filter
+               (assoc word-filter :words words))))
+
 (defn restore-database [request]
   (let [edn (get (:multipart-params request) "edn")
         data (edn/read-string (String. (:bytes edn) "utf-8"))]
@@ -356,12 +362,17 @@ source: https://example.com
     (doseq [o (:objects data)]
       (db/store! :_object o))
     (doseq [w (:word-filters data)]
-      (db/store! :word-filter w))
+      (import-word-filter w))
     (doseq [c (:code data)]
       (db/store! :code c))
     (doseq [s (:settings data)]
       (db/store! :settings s)))
   (core/text-page "OK"))
+
+(defn export-word-filters []
+  (for [word-filter (map #(into {} %) (db/fetch :word-filter))]
+    (let [words (map #(str %) (:words word-filter))]
+      (assoc word-filter :words words))))
 
 (defn backup-database []
   (core/attachment-page
@@ -375,7 +386,7 @@ source: https://example.com
            :subscriptions    (map #(into {} %) (db/fetch :subscription))
            :auth-tokens      (map #(into {} %) (db/fetch :auth-token))
            :objects          (map #(into {} %) (db/fetch :_object))
-           :word-filters     (map #(into {} %) (db/fetch :word-filter))
+           :word-filters     (export-word-filters)
            :code             (map #(into {} %) (db/fetch :code))
            :settings         (map #(into {} %) (db/fetch :settings))
            }))))

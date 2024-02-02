@@ -21,7 +21,8 @@ app_id = root.find("g:application", XMLNS).text
 
 def deploy(file):
     subprocess.Popen([shutil.which("gcloud.cmd"), "app", "deploy", file,
-                      "--version=" + version, "--project=" + app_id, "--quiet"],
+                      "--version=" + version, "--project=" + app_id, "--quiet", #"--no-cache"
+                      ],
                      stdout=sys.stdout, stderr=sys.stderr).communicate()
 
 
